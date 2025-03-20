@@ -10,7 +10,7 @@ jobs:
         runs-on: ubuntu-latest
         defaults:
             run:
-              working-directory: apps/invoice-reader      
+              working-directory: apps/invoiceReader      
         steps: 
             - name: Checkout code
               uses: actions/checkout@v4
@@ -23,7 +23,7 @@ jobs:
           contents: read
         secrets: inherit
         with:
-            application_working_directory: apps/invoice-reader
+            application_working_directory: apps/invoiceReader
             image_name: ${{ vars.TF_VAR_INVOICEREADER_IMAGE_REGISTRY }} # the tag is set to the commit id 
             image_tag_variable: "invoiceReader_image_tag"
             registry_project: ${{ vars.AWS_PROJECT_ID}}
