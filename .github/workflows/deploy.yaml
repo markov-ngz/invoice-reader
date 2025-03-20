@@ -1,0 +1,49 @@
+name: "Terraform Infrastructure Deployment"
+
+
+on:
+  pull_request:
+    branches:
+      - prod
+
+jobs:
+    terraform:
+        if: ${{ github.head_ref == 'main' }}
+        permissions:
+          contents: "read"
+          id-token: "write"
+        runs-on: ubuntu-latest
+        environment: 
+            name : production
+        env:
+            TF_IN_AUTOMATION : TRUE
+            # TF_PLUGIN_CACHE_DIR : ../plugin-cache # if you have git LFS (not like a poor student) it lets you avoid downloading the provider 
+
+        steps:
+          - name: Check out code
+            uses: actions/checkout@v4
+
+          - name: Configure AWS credentials
+            uses: aws-actions/configure-aws-credentials@v4
+            with:
+              aws-region: eu-west-3
+              aws-access-key-id: ${{secrets.AWS_SECRET_KEY_ID}}
+              aws-secret-access-key: ${{secrets.AWS_SECRET_KEY}}
+
+          - name: Setup Terraform
+            uses: hashicorp/setup-terraform@v3
+          
+          - name: Init Terraform
+            run: terraform init
+            working-directory: infra/prod
+
+          - name: Apply Terraform configuration
+            working-directory: infra/prod
+            env: 
+              TF_VAR_alerting_email : ${{ secrets.TF_VAR_alerting_email }}
+              
+              # specific to application
+              TF_VAR_example_image_registry: ${{ vars.TF_VAR_EXAMPLE_IMAGE_REGISTRY }}
+              TF_VAR_example_image_tag: ${{ vars.TF_VAR_example_image_tag }}
+            id: apply
+            run: terraform apply -auto-approve

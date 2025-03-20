@@ -1,0 +1,69 @@
+# TEMPORARY 
+name: Build Docker Image
+
+on:
+  workflow_call:
+    inputs:
+      application_working_directory:
+        description: 'Application working directory'
+        required: true
+        type: string
+      image_name:
+        description: 'Name of the image to push to the registry'
+        required: true
+        type: string
+      image_tag_variable:
+        description: 'Name of the terraform image tag variable'
+        required: true
+        type: string
+      registry_project:
+        description: 'GCP artifact registry project'
+        required: true
+        type: string
+      registry_location:
+        description: 'GCP artifact registry location'
+        required: true
+        type: string
+jobs: 
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      REGISTRY_LOCATION: ${{ inputs.registry_location }}
+      REGISTRY_PROJECT: ${{ inputs.registry_project }} 
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ inputs.registry_location }}
+          aws-access-key-id: ${{secrets.AWS_SECRET_KEY_ID}}
+          aws-secret-access-key: ${{secrets.AWS_SECRET_KEY}}
+
+      - name: Export full image name # with repository 
+        run: echo "IMAGE_NAME=$REGISTRY_PROJECT.dkr.ecr.$REGISTRY_LOCATION.amazonaws.com/${{ inputs.image_name }}:${{ github.sha }}" >> $GITHUB_ENV
+          
+      - name: Print image name # to debug 
+        run: echo $IMAGE_NAME
+
+      - run: aws ecr get-login-password --region $REGISTRY_LOCATION | docker login --username AWS --password-stdin $REGISTRY_PROJECT.dkr.ecr.$REGISTRY_LOCATION.amazonaws.com/${{ inputs.image_name }}
+
+      
+      - name: Build docker image
+        working-directory: ${{ inputs.application_working_directory}}
+        run: |
+          docker build -t $IMAGE_NAME . 
+
+      - name: Push Docker image to Artifact Registry
+        run: |
+          docker push $IMAGE_NAME
+
+      - name: Update Repository variable
+        run: gh variable set TF_VAR_${{ inputs.image_tag_variable }} --body ${{ github.sha }} -r ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT_WRITE_VARIABLES }}

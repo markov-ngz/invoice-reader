@@ -1,0 +1,45 @@
+name: Build
+
+on:
+  pull_request:
+    branches: main
+
+jobs:
+    test:
+        if: ${{ github.head_ref == 'example' }}
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+              working-directory: apps/example      
+        steps: 
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Python
+              uses: actions/setup-python@v5
+
+            - name: Check dir
+              run: ls 
+
+            - name: Install dependencies
+              run: pip install -r requirements.txt
+
+            - name: Install pytest
+              run: pip install pytest
+              
+            - name: Run pytest
+              run: python -m pytest
+
+    build_docker_image:
+        needs: test
+        uses: markov-ngz/basic-service-template/.github/workflows/build.yaml@main
+        permissions:
+          id-token: write
+          contents: read
+        secrets: inherit
+        with:
+            application_working_directory: apps/example
+            image_name: ${{ vars.TF_VAR_EXAMPLE_IMAGE_REGISTRY }} # the tag is set to the commit id 
+            image_tag_variable: "example_image_tag"
+            registry_project: ${{ vars.AWS_PROJECT_ID}}
+            registry_location: ${{ vars.AWS_REGION}}
