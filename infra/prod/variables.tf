@@ -1,9 +1,9 @@
-variable "example_image_registry" {
+variable "invoiceReader_image_registry" {
   type        = string
   description = "Name of the container registry name"
 }
 
-variable "example_image_tag" {
+variable "invoiceReader_image_tag" {
   type        = string
   description = "Name of the image tag "
 }
