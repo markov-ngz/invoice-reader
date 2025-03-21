@@ -23,4 +23,4 @@ COPY --from=build /src/target/*.jar ./
 # Set runtime interface client as default command for the container runtime
 ENTRYPOINT [ "/usr/bin/java", "-cp", "./*", "com.amazonaws.services.lambda.runtime.api.client.AWSLambda" ]
 # Pass the name of the function handler as an argument to the runtime
-CMD [ "invoiceReader.App::readInvoice" ]
+CMD [ "invoiceReader.Handler::handleRequest" ]
