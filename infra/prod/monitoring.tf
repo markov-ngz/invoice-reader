@@ -14,9 +14,9 @@ resource "aws_cloudwatch_log_group" "invoiceReader" {
 # Metric to catch the errors
 resource "aws_cloudwatch_log_metric_filter" "error_filter" {
   name           = "lambda-error-filter"
-  log_group_name = aws_cloudwatch_log_group.invoiceReader.name  # Ensure this matches your Lambda's log group
+  log_group_name = aws_cloudwatch_log_group.invoiceReader.name # Ensure this matches your Lambda's log group
 
-  pattern = "{ $.level = \"ERROR\" }"  # JSON log format, change if necessary
+  pattern = "{ $.level = \"ERROR\" }" # JSON log format, change if necessary
 
   metric_transformation {
     name      = "LambdaErrorCount"

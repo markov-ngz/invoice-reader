@@ -1,6 +1,6 @@
 # manually create the registry yourself : 
 data "aws_ecr_repository" "invoiceReader_registry" {
-  name                 = var.invoiceReader_image_registry
+  name = var.invoiceReader_image_registry
 
 }
 
