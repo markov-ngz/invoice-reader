@@ -1,6 +1,7 @@
 package invoiceReader;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.amazonaws.lambda.thirdparty.com.fasterxml.jackson.databind.ObjectMapper;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -15,102 +16,191 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 import software.amazon.awssdk.services.textract.TextractClient;
 import software.amazon.awssdk.services.textract.model.Block;
-import software.amazon.awssdk.services.textract.model.DetectDocumentTextRequest;
-import software.amazon.awssdk.services.textract.model.DetectDocumentTextResponse;
-import software.amazon.awssdk.services.textract.model.Document;
-import software.amazon.awssdk.services.textract.model.S3Object ; 
 
+import software.amazon.awssdk.services.sqs.model.SqsException;
+import software.amazon.awssdk.services.textract.model.TextractException;
 
-public class Handler implements RequestHandler<SQSEvent, String>{
+public class Handler implements RequestHandler<SQSEvent, String> {
 
-    private TextractClient textractClient ; 
+  private static final Region DEFAULT_REGION = Region.EU_WEST_3;
+  private static final String QUEUE_URL = "https://sqs.eu-west-3.amazonaws.com/<project_id>/<name>";
+  private static final int DEFAULT_SQS_DELAY_SECONDS = 10;
+  
+  private final ObjectMapper objectMapper = new ObjectMapper();
+  
+  private TextractClient textractClient;
+  private SqsClient sqsClient;
+  private LambdaLogger logger;
 
-    LambdaLogger logger ; 
-
-    SqsClient sqsClient ; 
-
-    String queueUrl  = "https://sqs.eu-west-3.amazonaws.com/<project_id>/<name"; 
-
-    ObjectMapper objectMapper = new ObjectMapper() ; 
-
-
-    @Override
-    public String handleRequest(SQSEvent event, Context context)
-    {
-
-      Region region = Region.EU_WEST_3 ; 
-
+  @Override
+  public String handleRequest(SQSEvent event, Context context) {
       this.logger = context.getLogger();
+      logger.log("Starting processing of SQSEvent with " + 
+                 Optional.ofNullable(event.getRecords()).map(List::size).orElse(0) + 
+                 " records", LogLevel.INFO);
       
-      logger.log("EVENT TYPE: " + event.getClass());
-
-
-      this.textractClient = TextractClient.builder()
-              .region(region)
-              .build();
-
-      this.sqsClient = SqsClient.create() ; 
+      initializeClients();
       
+      try {
+          processMessages(event);
+          logger.log("Processing completed successfully", LogLevel.INFO);
+          return "Success";
+      } catch (Exception e) {
+          logger.log("Fatal error during event processing: " + e.getMessage(), LogLevel.ERROR);
+          throw new InvoiceProcessingException("Failed to process invoice event", e);
+      } finally {
+          closeClients();
+      }
+  }
 
-      event.getRecords().forEach( m -> processSQSMessage(m)) ; 
-
-      return  "return data do not matter" ;
+  private void initializeClients() {
+      logger.log("Initializing AWS clients", LogLevel.DEBUG);
       
-    }
+      try {
+          this.textractClient = TextractClient.builder()
+                  .region(DEFAULT_REGION)
+                  .build();
+          
+          this.sqsClient = SqsClient.builder()
+                  .region(DEFAULT_REGION)
+                  .build();
+          
+          logger.log("AWS clients initialized successfully", LogLevel.DEBUG);
+      } catch (Exception e) {
+          logger.log("Failed to initialize AWS clients: " + e.getMessage(), LogLevel.ERROR);
+          throw new InvoiceProcessingException("Client initialization failed", e);
+      }
+  }
+  
 
-    /*
-    * Process SQSMessage with a message body like S3UserObject
-    * 1. Parse SQSMessageBody to  S3UserObjectwithText
-    * 2. Extract Text from S3Object
-    * 3. Write message to queue
-    */
-    private void processSQSMessage(SQSMessage sqsMessage){
-        this.logger.log(sqsMessage.getBody());
-        
-        try {
 
-          // 1. Parse Body 
-          S3UserObjectwithText s3UserObject = (S3UserObjectwithText) S3UserObject.fromSQSMessage(sqsMessage) ;  
+  private void processMessages(SQSEvent event) {
+      if (event == null || event.getRecords() == null || event.getRecords().isEmpty()) {
+          logger.log("No records to process", LogLevel.WARN);
+          return;
+      }
+      
+      logger.log("Processing " + event.getRecords().size() + " messages", LogLevel.INFO);
+      
+      for (SQSMessage message : event.getRecords()) {
+          try {
+              processSingleMessage(message);
+          } catch (Exception e) {
+              logger.log("Error processing message: " + e.getMessage() + ". Continuing with next message.", LogLevel.ERROR);
+              // Continue processing other messages even if one fails
+          }
+      }
+  }
+  
+  private void processSingleMessage(SQSMessage message) {
+      if (message == null) {
+          logger.log("Null message received, skipping", LogLevel.WARN);
+          return;
+      }
+      
+      String messageId = message.getMessageId();
+      logger.log("Processing message with ID: " + messageId, LogLevel.INFO);
+      
+      try {
+          // Parse the message body
+          S3UserObjectwithText s3UserObject = parseMessageBody(message);
+          
+          // Extract text from S3 object
+          List<Block> textBlocks = extractTextFromDocument(s3UserObject);
+          
+          // Update the S3 object with extracted text
+          s3UserObject.setBlocks(textBlocks);
+          
+          // Send to output queue
+          sendToOutputQueue(s3UserObject);
+          
+          logger.log("Successfully processed message: " + messageId, LogLevel.INFO);
+      } catch (Exception e) {
+          logger.log("Failed to process message " + messageId + ": " + e.getMessage(), LogLevel.ERROR);
+          throw new MessageProcessingException("Error processing message: " + messageId, e);
+      }
+  }
+  
+  private S3UserObjectwithText parseMessageBody(SQSMessage message) {
 
+      logger.log("Parsing message body" , LogLevel.DEBUG);
+      
+      try {
+          String messageBody = message.getBody();
+          if (messageBody == null || messageBody.isEmpty()) {
+              throw new MessageProcessingException("Empty message body");
+          }
+          
+          S3UserObjectwithText s3UserObject = (S3UserObjectwithText) S3UserObject.fromSQSMessage(message);
+          
+          if (s3UserObject == null) {
+              throw new MessageProcessingException("Failed to parse S3UserObject from message");
+          }
+          
+          logger.log("Successfully parsed message body for bucket: " + 
+                     s3UserObject.getBucketName() + ", object: " + s3UserObject.getObjectKey(), LogLevel.DEBUG);
+          
+          return s3UserObject;
+      } catch (Exception e) {
+          logger.log("Error parsing message body: " + e.getMessage(), LogLevel.ERROR);
+          throw new MessageProcessingException("Failed to parse message body", e);
+      }
+  }
+  
+  private List<Block> extractTextFromDocument(S3UserObjectwithText s3UserObject) {
+      String bucketName = s3UserObject.getBucketName();
+      String objectKey = s3UserObject.getObjectKey();
+      
+      logger.log("Extracting text from document in bucket: " + bucketName + ", key: " + objectKey, LogLevel.INFO);
+      
+      try {
+          return new TextractService(textractClient).extractText(bucketName, objectKey);
+      } catch (TextractException e) {
+          logger.log("Textract service error: " + e.getMessage(), LogLevel.ERROR);
+          throw new TextExtractionException("Failed to extract text using Textract", e);
+      } catch (Exception e) {
+          logger.log("Unexpected error during text extraction: " + e.getMessage(), LogLevel.ERROR);
+          throw new TextExtractionException("Unexpected error during text extraction", e);
+      }
+  }
+  
+  private void sendToOutputQueue(S3UserObjectwithText s3UserObject) {
+      logger.log("Sending processed document to output queue", LogLevel.INFO);
+      
+      try {
+          String messageBody = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(s3UserObject);
+          
+          SendMessageRequest sendRequest = SendMessageRequest.builder()
+                  .queueUrl(QUEUE_URL)
+                  .messageBody(messageBody)
+                  .delaySeconds(DEFAULT_SQS_DELAY_SECONDS)
+                  .build();
+          
+          sqsClient.sendMessage(sendRequest);
+          
+          logger.log("Successfully sent message to output queue", LogLevel.INFO);
+      } catch (SqsException e) {
+          logger.log("SQS service error: " + e.getMessage(), LogLevel.ERROR);
+          throw new MessageSendException("Failed to send message to SQS", e);
+      } catch (Exception e) {
+          logger.log("Error sending message to output queue: " + e.getMessage(), LogLevel.ERROR);
+          throw new MessageSendException("Error sending message to output queue", e);
+      }
+  }
 
-          // 2. Extract Text 
-          List<Block> blocks = extractText(s3UserObject.getBucketName(), s3UserObject.getObjectKey()) ;
-
-          s3UserObject.setBlocks(blocks);
-
-          // 3. Write message 
-          String messageBody = this.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(s3UserObject) ; 
-
-          sqsClient.sendMessage(SendMessageRequest.builder()
-          .queueUrl(queueUrl)
-          .messageBody(messageBody)
-          .delaySeconds(10)
-          .build());
-
-        } catch (Exception e) {
-          logger.log(e.getMessage(),LogLevel.ERROR) ;
-        }
-
-    }
+  private void closeClients() {
+    logger.log("Closing AWS clients", LogLevel.DEBUG);
     
-    private List<Block> extractText(String bucketName, String objectKey){
-      
-      S3Object textractS3Object = S3Object.builder()
-      .bucket(bucketName)
-      .name(objectKey)
-      .build();
-
-      Document document = Document.builder()
-      .s3Object(textractS3Object)
-      .build();
-
-      DetectDocumentTextRequest detectDocumentTextRequest = DetectDocumentTextRequest.builder()
-      .document(document)
-      .build();
-
-      DetectDocumentTextResponse textResponse = this.textractClient.detectDocumentText(detectDocumentTextRequest);
-
-      return textResponse.blocks() ; 
+    try {
+        if (textractClient != null) {
+            textractClient.close();
+        }
+        
+        if (sqsClient != null) {
+            sqsClient.close();
+        }
+    } catch (Exception e) {
+        logger.log("Error while closing clients: " + e.getMessage(), LogLevel.WARN);
     }
-
+}
 }
