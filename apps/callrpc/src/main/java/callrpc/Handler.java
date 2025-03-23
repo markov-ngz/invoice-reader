@@ -17,7 +17,7 @@ public class Handler implements RequestHandler<SQSEvent, String>{
 
       LambdaLogger logger = context.getLogger();
 
-      logger.info("Starting up new iteration") ; 
+      logger.log("Starting up new iteration") ; 
 
       event.getRecords().forEach( m -> m.getAttributes().forEach((key,value) -> logger.log("Attribute : ( "+ key + ", " + value + " )"))) ; // log attributes with key value 
 
