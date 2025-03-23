@@ -1,4 +1,4 @@
-package invoiceReader;
+package analyzeDocument;
 
 import java.util.List;
 import java.util.Optional;
