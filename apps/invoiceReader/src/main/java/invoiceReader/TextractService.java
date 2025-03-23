@@ -3,9 +3,9 @@ package invoiceReader;
 import java.util.List;
 
 import software.amazon.awssdk.services.textract.TextractClient;
+import software.amazon.awssdk.services.textract.model.AnalyzeDocumentRequest;
+import software.amazon.awssdk.services.textract.model.AnalyzeDocumentResponse;
 import software.amazon.awssdk.services.textract.model.Block;
-import software.amazon.awssdk.services.textract.model.DetectDocumentTextRequest;
-import software.amazon.awssdk.services.textract.model.DetectDocumentTextResponse;
 import software.amazon.awssdk.services.textract.model.Document;
 import software.amazon.awssdk.services.textract.model.S3Object ; 
 
@@ -33,11 +33,11 @@ public class TextractService {
                 .s3Object(textractS3Object)
                 .build();
         
-        DetectDocumentTextRequest detectRequest = DetectDocumentTextRequest.builder()
-                .document(document)
-                .build();
+        AnalyzeDocumentRequest detectRequest = AnalyzeDocumentRequest.builder()
+        .document(document)
+        .build();
         
-        DetectDocumentTextResponse textResponse = textractClient.detectDocumentText(detectRequest);
+        AnalyzeDocumentResponse textResponse = textractClient.analyzeDocument(detectRequest);
         
         return textResponse.blocks();
     }
