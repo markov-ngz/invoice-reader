@@ -43,7 +43,7 @@ jobs:
               TF_VAR_alerting_email : ${{ secrets.TF_VAR_alerting_email }}
               
               # specific to application
-              TF_VAR_invoiceReader_image_registry: ${{ vars.TF_VAR_INVOICEREADER_IMAGE_REGISTRY }}
-              TF_VAR_invoiceReader_image_tag: ${{ vars.TF_VAR_INVOICEREADER_IMAGE_TAG }}
+              TF_VAR_analyzeDocument_image_registry: ${{ vars.TF_VAR_ANALYZEDOCUMENT_IMAGE_REGISTRY }}
+              TF_VAR_analyzeDocument_image_tag: ${{ vars.TF_VAR_ANALYZEDOCUMENT_IMAGE_TAG }}
             id: apply
             run: terraform apply -auto-approve

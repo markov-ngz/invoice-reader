@@ -1,5 +1,5 @@
-resource "aws_cloudwatch_log_group" "invoiceReader" {
-  name = "invoiceReader_log_group"
+resource "aws_cloudwatch_log_group" "analyzeDocument" {
+  name = "analyzeDocument_log_group"
 
   log_group_class = "STANDARD"
 
@@ -7,14 +7,14 @@ resource "aws_cloudwatch_log_group" "invoiceReader" {
 
   tags = {
     Environment = "production"
-    Application = "invoiceReader"
+    Application = "analyzeDocument"
   }
 }
 
 # Metric to catch the errors
 resource "aws_cloudwatch_log_metric_filter" "error_filter" {
   name           = "lambda-error-filter"
-  log_group_name = aws_cloudwatch_log_group.invoiceReader.name # Ensure this matches your Lambda's log group
+  log_group_name = aws_cloudwatch_log_group.analyzeDocument.name # Ensure this matches your Lambda's log group
 
   pattern = "{ $.level = \"ERROR\" }" # JSON log format, change if necessary
 

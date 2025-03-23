@@ -1,22 +1,22 @@
 
-resource "aws_lambda_function_url" "invoiceReader_url" {
-  function_name = aws_lambda_function.invoiceReader.function_name
+resource "aws_lambda_function_url" "analyzeDocument_url" {
+  function_name = aws_lambda_function.analyzeDocument.function_name
 
   authorization_type = "NONE"
 }
 
-resource "aws_lambda_function" "invoiceReader" {
-  function_name = "invoiceReader_lambda"
+resource "aws_lambda_function" "analyzeDocument" {
+  function_name = "analyzeDocument_lambda"
   role          = aws_iam_role.iam_for_lambda.arn
   package_type  = "Image"
-  image_uri     = data.aws_ecr_image.invoiceReader_image.image_uri
+  image_uri     = data.aws_ecr_image.analyzeDocument_image.image_uri
   timeout       = 30
 
   logging_config {
     log_format            = "JSON"
     application_log_level = "INFO"
     system_log_level      = "INFO"
-    log_group             = aws_cloudwatch_log_group.invoiceReader.name
+    log_group             = aws_cloudwatch_log_group.analyzeDocument.name
   }
 }
 
