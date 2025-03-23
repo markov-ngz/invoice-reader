@@ -2,6 +2,7 @@ package analyzeDocument;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.amazonaws.lambda.thirdparty.com.fasterxml.jackson.databind.ObjectMapper;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -9,9 +10,13 @@ import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
+import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification;
+import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3EventNotificationRecord;
 import com.amazonaws.services.lambda.runtime.logging.LogLevel;
 
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 import software.amazon.awssdk.services.textract.TextractClient;
@@ -31,6 +36,7 @@ public class Handler implements RequestHandler<SQSEvent, String> {
   private TextractClient textractClient;
   private SqsClient sqsClient;
   private LambdaLogger logger;
+  private S3Client s3Client ; 
 
   @Override
   public String handleRequest(SQSEvent event, Context context) {
@@ -64,6 +70,11 @@ public class Handler implements RequestHandler<SQSEvent, String> {
           this.sqsClient = SqsClient.builder()
                   .region(DEFAULT_REGION)
                   .build();
+
+        this.s3Client = S3Client
+            .builder()
+            .region(DEFAULT_REGION)
+            .build();
           
           logger.log("AWS clients initialized successfully", LogLevel.DEBUG);
       } catch (Exception e) {
@@ -131,7 +142,15 @@ public class Handler implements RequestHandler<SQSEvent, String> {
               throw new MessageProcessingException("Empty message body");
           }
           
-          S3UserObjectwithText s3UserObject = (S3UserObjectwithText) S3UserObject.fromSQSMessage(message);
+          S3EventNotification s3EventNotification = S3EventNotification.fromJson(messageBody) ; 
+
+          List<S3EventNotificationRecord> records = s3EventNotification.getRecords();
+
+
+          List<S3UserObject> s3UserObjects =S3UserObject.fromS3EventNotificationRecords(records, this.s3Client);
+          
+          List<S3UserObjectwithText> s3UserObjectswithText = s3UserObjects.stream().map( o ->  (S3UserObjectwithText) o ).collect(Collectors.toList());
+                    
           
           if (s3UserObject == null) {
               throw new MessageProcessingException("Failed to parse S3UserObject from message");
