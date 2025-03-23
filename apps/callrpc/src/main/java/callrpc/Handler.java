@@ -9,13 +9,15 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
-public class Handler implements RequestHandler<SQSEvent, Void>{
+public class Handler implements RequestHandler<SQSEvent, String>{
 
     @Override
-    public Void handleRequest(SQSEvent event, Context context)
+    public String handleRequest(SQSEvent event, Context context)
     {
 
       LambdaLogger logger = context.getLogger();
+
+      logger.info("Starting up new iteration") ; 
 
       event.getRecords().forEach( m -> m.getAttributes().forEach((key,value) -> logger.log("Attribute : ( "+ key + ", " + value + " )"))) ; // log attributes with key value 
 
@@ -24,7 +26,7 @@ public class Handler implements RequestHandler<SQSEvent, Void>{
       event.getRecords().forEach( m -> sendMessage(m.getAttributes().get("ResponseQueueUrl"), sqsClient)) ;
 
       // write record to queue extracted from attributes ? 
-      return null ;
+      return "42" ;
     }
 
     private void sendMessage(String queueUrl, SqsClient sqsClient){
