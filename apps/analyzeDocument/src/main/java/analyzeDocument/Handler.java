@@ -30,6 +30,7 @@ import software.amazon.awssdk.services.textract.TextractClient;
 import software.amazon.awssdk.services.textract.model.Block;
 import software.amazon.awssdk.services.textract.model.TextractException;
 
+
 public class Handler implements RequestHandler<SQSEvent, String> {
 
   private static final Region DEFAULT_REGION = Region.EU_WEST_3;
@@ -52,7 +53,7 @@ public class Handler implements RequestHandler<SQSEvent, String> {
       
       initializeClients();
 
-      this.QUEUE_URL =  System.getenv("ANALYZED_DOCUMENTS_QUEUE_URL") ; 
+      this.QUEUE_URL =  System.getenv("ANALYZED_DOCUMENT_QUEUE_URL") ; 
 
       logger.log("Analyze Documents will be written to queue : " + this.QUEUE_URL, LogLevel.INFO );
 
@@ -130,6 +131,11 @@ public class Handler implements RequestHandler<SQSEvent, String> {
           // Parse the message body
           List<S3UserObject> s3UserObjects = parseMessageBody(message);
 
+          if(s3UserObjects == null){
+            logger.log("No S3UserObject for" + message.getMessageId()) ; 
+            return ; 
+          }
+
           processS3UserObjects(s3UserObjects) ; 
           
           logger.log("Successfully processed message: " + messageId, LogLevel.INFO);
@@ -155,7 +161,12 @@ public class Handler implements RequestHandler<SQSEvent, String> {
 
           List<S3EventNotificationRecord> records = s3EventNotification.getRecords();
 
+          if(records.isEmpty()){
 
+            logger.log("No S3 Event found for Message Id" + message.getMessageId(), LogLevel.INFO) ;
+            
+            return null; 
+          }
           List<S3UserObject> s3UserObjects = s3UserObjectsfromS3EventNotificationRecords(records, this.s3Client);
 
           if (s3UserObjects.isEmpty()){
