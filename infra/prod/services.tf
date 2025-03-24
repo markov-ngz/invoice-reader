@@ -18,6 +18,12 @@ resource "aws_lambda_function" "analyzeDocument" {
     system_log_level      = "INFO"
     log_group             = aws_cloudwatch_log_group.analyzeDocument.name
   }
+
+  environment {
+    variables = {
+      "ANALYZED_DOCUMENT_QUEUE_URL" = aws_sqs_queue.analyzed_documents_queue.url 
+    }
+  }
 }
 
 data "aws_iam_policy_document" "assume_role" {
