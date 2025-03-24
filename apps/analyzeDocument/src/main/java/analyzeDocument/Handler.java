@@ -161,7 +161,7 @@ public class Handler implements RequestHandler<SQSEvent, String> {
 
           List<S3EventNotificationRecord> records = s3EventNotification.getRecords();
 
-          if(records.isEmpty()){
+          if(records == null ){
 
             logger.log("No S3 Event found for Message Id" + message.getMessageId(), LogLevel.INFO) ;
             
