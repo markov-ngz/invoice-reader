@@ -54,6 +54,9 @@ public class Handler implements RequestHandler<SQSEvent, String> {
 
       this.QUEUE_URL =  System.getenv("ANALYZED_DOCUMENTS_QUEUE_URL") ; 
 
+      logger.log("Analyze Documents will be written to queue : " + this.QUEUE_URL, LogLevel.INFO );
+
+      logger.log("Begginning message process", LogLevel.INFO);
       try {
           processMessages(event);
           logger.log("Processing completed successfully", LogLevel.INFO);
@@ -96,6 +99,7 @@ public class Handler implements RequestHandler<SQSEvent, String> {
 
 
   private void processMessages(SQSEvent event) {
+
       if (event == null || event.getRecords() == null || event.getRecords().isEmpty()) {
           logger.log("No records to process", LogLevel.WARN);
           return;
@@ -107,19 +111,19 @@ public class Handler implements RequestHandler<SQSEvent, String> {
           try {
               processSingleMessage(message);
           } catch (Exception e) {
-              logger.log("Error processing message: " + e.getMessage() + ". Continuing with next message.", LogLevel.ERROR);
-              // Continue processing other messages even if one fails
+              throw new MessageProcessingException("Error processing message: " + e.getMessage() + ". Continuing with next message.") ; 
           }
       }
   }
   
   private void processSingleMessage(SQSMessage message) {
       if (message == null) {
-          logger.log("Null message received, skipping", LogLevel.WARN);
+          logger.log("Null message received, skipping", LogLevel.ERROR);
           return;
       }
       
       String messageId = message.getMessageId();
+
       logger.log("Processing message with ID: " + messageId, LogLevel.INFO);
       
       try {
@@ -129,6 +133,7 @@ public class Handler implements RequestHandler<SQSEvent, String> {
           processS3UserObjects(s3UserObjects) ; 
           
           logger.log("Successfully processed message: " + messageId, LogLevel.INFO);
+
       } catch (Exception e) {
           logger.log("Failed to process message " + messageId + ": " + e.getMessage(), LogLevel.ERROR);
           throw new MessageProcessingException("Error processing message: " + messageId, e);
@@ -141,6 +146,7 @@ public class Handler implements RequestHandler<SQSEvent, String> {
       
       try {
           String messageBody = message.getBody();
+          
           if (messageBody == null || messageBody.isEmpty()) {
               throw new MessageProcessingException("Empty message body");
           }
@@ -177,7 +183,7 @@ public class Handler implements RequestHandler<SQSEvent, String> {
             
             GetObjectAttributesResponse getObjectAttributesResponse =  s3Client.getObjectAttributes(getObjectAttributesRequest) ; 
 
-            Integer userId =getObjectAttributesResponse.getValueForField("USER_ID", Integer.class).orElse(null ) ; 
+            Integer userId =getObjectAttributesResponse.getValueForField("x-amz-meta-userid", Integer.class).orElse(null ) ; 
 
             if(userId != null){
                 S3UserObject s3UserObject = new S3UserObject(s3.getBucket().getName(),s3Object.getKey(),userId.intValue()) ; 
