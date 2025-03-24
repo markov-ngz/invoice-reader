@@ -1,5 +1,5 @@
 resource "aws_sqs_queue" "analyzed_documents_queue" {
-  name   = "analyzed-documents-queue"
+  name = "analyzed-documents-queue"
 }
 
 # resource "aws_lambda_event_source_mapping" "analyzed_documents_queue_mapping" {

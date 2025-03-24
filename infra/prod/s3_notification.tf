@@ -42,5 +42,5 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
 
 resource "aws_lambda_event_source_mapping" "invoice_reader_call" {
   event_source_arn = aws_sqs_queue.s3_new_invoice.arn
-  function_name    = aws_lambda_function.invoiceReader.arn
+  function_name    = aws_lambda_function.analyzeDocument.arn
 }

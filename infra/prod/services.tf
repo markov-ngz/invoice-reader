@@ -21,7 +21,7 @@ resource "aws_lambda_function" "analyzeDocument" {
 
   environment {
     variables = {
-      "ANALYZED_DOCUMENT_QUEUE_URL" = aws_sqs_queue.analyzed_documents_queue.url 
+      "ANALYZED_DOCUMENT_QUEUE_URL" = aws_sqs_queue.analyzed_documents_queue.url
     }
   }
 }
