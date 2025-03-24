@@ -33,7 +33,7 @@ import software.amazon.awssdk.services.textract.model.TextractException;
 public class Handler implements RequestHandler<SQSEvent, String> {
 
   private static final Region DEFAULT_REGION = Region.EU_WEST_3;
-  private static final String QUEUE_URL = "https://sqs.eu-west-3.amazonaws.com/<project_id>/<name>";
+  private  String QUEUE_URL ;
   private static final int DEFAULT_SQS_DELAY_SECONDS = 10;
   
   private final ObjectMapper objectMapper = new ObjectMapper();
@@ -51,6 +51,8 @@ public class Handler implements RequestHandler<SQSEvent, String> {
                  " records", LogLevel.INFO);
       
       initializeClients();
+
+      this.QUEUE_URL =  System.getenv("ANALYZED_DOCUMENTS_QUEUE_URL") ; 
 
       try {
           processMessages(event);
