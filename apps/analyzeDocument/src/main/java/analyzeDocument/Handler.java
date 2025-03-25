@@ -19,9 +19,8 @@ import software.amazon.awssdk.eventnotifications.s3.model.S3Object;
 
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.GetObjectAttributesRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectAttributesResponse;
-
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 import software.amazon.awssdk.services.sqs.model.SqsException;
@@ -190,11 +189,17 @@ public class Handler implements RequestHandler<SQSEvent, String> {
 
             S3Object s3Object = s3.getObject() ; 
 
-            GetObjectAttributesRequest getObjectAttributesRequest = GetObjectAttributesRequest.builder().bucket(s3.getBucket().getName()).key(s3Object.getKey()).build() ;  
-            
-            GetObjectAttributesResponse getObjectAttributesResponse =  s3Client.getObjectAttributes(getObjectAttributesRequest) ; 
+            HeadObjectRequest headObjectRequest = HeadObjectRequest.builder()
+                    .bucket(s3.getBucket().getName())
+                    .key(s3Object.getKey())
+                    .build();
 
-            Integer userId =getObjectAttributesResponse.getValueForField("x-amz-meta-userid", Integer.class).orElse(null ) ; 
+            HeadObjectResponse headObjectResponse = s3Client.headObject(headObjectRequest);
+
+            // Get custom metadata
+            String userIdMetadata = headObjectResponse.metadata().get("userid"); // Metadata keys are lowercase
+
+            Integer userId = Integer.parseInt(userIdMetadata); 
 
             if(userId != null){
                 S3UserObject s3UserObject = new S3UserObject(s3.getBucket().getName(),s3Object.getKey(),userId.intValue()) ; 
