@@ -7,6 +7,7 @@ import software.amazon.awssdk.services.textract.model.AnalyzeDocumentRequest;
 import software.amazon.awssdk.services.textract.model.AnalyzeDocumentResponse;
 import software.amazon.awssdk.services.textract.model.Block;
 import software.amazon.awssdk.services.textract.model.Document;
+import software.amazon.awssdk.services.textract.model.FeatureType;
 import software.amazon.awssdk.services.textract.model.S3Object ; 
 
 /*
@@ -35,6 +36,7 @@ public class TextractService {
         
         AnalyzeDocumentRequest detectRequest = AnalyzeDocumentRequest.builder()
         .document(document)
+        .featureTypes(FeatureType.FORMS)
         .build();
         
         AnalyzeDocumentResponse textResponse = textractClient.analyzeDocument(detectRequest);
