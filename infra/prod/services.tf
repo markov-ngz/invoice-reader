@@ -56,3 +56,8 @@ resource "aws_iam_role_policy_attachment" "sqs_basic_execution" {
   role       = aws_iam_role.iam_for_lambda.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole"
 }
+
+resource "aws_iam_role_policy_attachment" "s3_basic_execution" {
+  role       = aws_iam_role.iam_for_lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+}
