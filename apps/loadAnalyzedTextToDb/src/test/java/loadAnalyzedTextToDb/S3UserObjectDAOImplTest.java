@@ -5,6 +5,8 @@ import loadAnalyzedTextToDb.daos.S3UserObjectDAOImpl;
 import loadAnalyzedTextToDb.dtos.BlockDTO;
 import loadAnalyzedTextToDb.dtos.GeometryDTO;
 import loadAnalyzedTextToDb.dtos.S3UserObject;
+import loadAnalyzedTextToDb.services.S3UserObjectService;
+
 import org.junit.jupiter.api.*;
 
 import java.sql.*;
@@ -16,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class S3UserObjectDAOImplTest {
     private static Connection connection;
     private S3UserObjectDAO dao;
+    private S3UserObjectService service ;
 
     @BeforeAll
     public static void setupDatabase() throws SQLException {
@@ -73,6 +76,9 @@ public class S3UserObjectDAOImplTest {
             
             // Initialize DAO
             dao = new S3UserObjectDAOImpl(connection);
+
+            service = new S3UserObjectService(connection) ; 
+
         } catch (SQLException e) {
             fail("Setup failed: " + e.getMessage());
         }
@@ -156,6 +162,51 @@ public class S3UserObjectDAOImplTest {
                 assertEquals(2.0f, rs.getFloat("geometry_height"), 0.001);
             }
         }
+    }
+
+
+    @Test
+    public void testService() throws Exception {
+
+        S3UserObject s3UserObject = new S3UserObject("Example", "hello/world", 142) ; 
+        
+        List<BlockDTO> blocks = new ArrayList<>();
+        
+        BlockDTO block1 = new BlockDTO(null);
+        block1.blockType = "serviceLINE";
+        block1.id = "serviceBlockid";
+        block1.textType = "HANDWRITING";
+        block1.text = "Test Block 1";
+        
+        GeometryDTO geometry1 = new GeometryDTO(null);
+        geometry1.width = 1.0f;
+        geometry1.height = 2.0f;
+        geometry1.left = 0.5f;
+        geometry1.top = 0.3f;
+        block1.geometry = geometry1;
+        
+        blocks.add(block1);
+
+        s3UserObject.setBlocks(blocks);
+
+        assertDoesNotThrow(() -> service.processAndStoreS3UserObject(s3UserObject));
+
+        assertThrows(Exception.class, () -> service.processAndStoreS3UserObject(null)) ; 
+
+
+        try (PreparedStatement pstmt = connection.prepareStatement(
+            "SELECT * FROM blocks WHERE block_id = ? AND text = ? ")) {
+            
+            pstmt.setString(1, "serviceBlockid");
+            pstmt.setString(2, "Test Block 1");
+
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                assertTrue(rs.next(), "Block record should exist in database");
+            
+            }
+        }
+
     }
 
     @AfterAll
