@@ -22,12 +22,18 @@ public class S3UserObjectDAOImpl implements S3UserObjectDAO {
     public int saveS3UserObject(S3UserObject s3UserObject) throws SQLException {
         String sql = "INSERT INTO s3_user_objects (bucket_name, object_key, user_id) VALUES (?, ?, ?) RETURNING id";
         
-        try (PreparedStatement pstmt = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, s3UserObject.getBucketName());
             pstmt.setString(2, s3UserObject.getObjectKey());
             pstmt.setInt(3, s3UserObject.getUserId());
             
-            return  pstmt.executeUpdate();
+            ResultSet resultSet =  pstmt.executeQuery();
+
+            if(resultSet.next()){
+                return resultSet.getInt("id") ; 
+            }else{
+                throw new SQLException("Query did not return id from inserted row") ; 
+            }
         }
     }
 

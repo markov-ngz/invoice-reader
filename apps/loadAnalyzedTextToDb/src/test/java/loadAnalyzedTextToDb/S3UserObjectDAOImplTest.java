@@ -105,101 +105,58 @@ public class S3UserObjectDAOImplTest {
         }
     }
 
-    // @Test
-    // public void testSaveBlocks() throws SQLException {
-    //     // First, insert a S3 user object to get an ID
-    //     S3UserObject s3UserObject = new S3UserObject("test-bucket", "test-key", 123);
-    //     int s3UserObjectId =  dao.saveS3UserObject(s3UserObject);
+    @Test
+    public void testSaveBlocks() throws SQLException {
+        // First, insert a S3 user object to get an ID
+        S3UserObject s3UserObject = new S3UserObject("test-bucket", "test-key", 123);
+        int s3UserObjectId =  dao.saveS3UserObject(s3UserObject);
 
-    //     // Prepare blocks
-    //     List<BlockDTO> blocks = new ArrayList<>();
+        // Prepare blocks
+        List<BlockDTO> blocks = new ArrayList<>();
         
-    //     BlockDTO block1 = new BlockDTO(null);
-    //     block1.blockType = "LINE";
-    //     block1.id = "block1";
-    //     block1.textType = "HANDWRITING";
-    //     block1.text = "Test Block 1";
+        BlockDTO block1 = new BlockDTO(null);
+        block1.blockType = "LINE";
+        block1.id = "block1";
+        block1.textType = "HANDWRITING";
+        block1.text = "Test Block 1";
         
-    //     GeometryDTO geometry1 = new GeometryDTO(null);
-    //     geometry1.width = 1.0f;
-    //     geometry1.height = 2.0f;
-    //     geometry1.left = 0.5f;
-    //     geometry1.top = 0.3f;
-    //     block1.geometry = geometry1;
+        GeometryDTO geometry1 = new GeometryDTO(null);
+        geometry1.width = 1.0f;
+        geometry1.height = 2.0f;
+        geometry1.left = 0.5f;
+        geometry1.top = 0.3f;
+        block1.geometry = geometry1;
         
-    //     blocks.add(block1);
+        blocks.add(block1);
 
-    //     // Add blocks to the S3 user object
-    //     s3UserObject.setBlocks(blocks);
+        // Add blocks to the S3 user object
+        s3UserObject.setBlocks(blocks);
 
-    //     // Save blocks
-    //     int insertedCount = dao.saveBlocks(s3UserObject, s3UserObjectId);
+        // Save blocks
+        int insertedCount = dao.saveBlocks(s3UserObject, s3UserObjectId);
 
-    //     // Verify insertion
-    //     assertEquals(1, insertedCount);
+        // Verify insertion
+        assertEquals(1, insertedCount);
 
-    //     // Verify data was actually inserted
-    //     try (PreparedStatement pstmt = connection.prepareStatement(
-    //         "SELECT * FROM blocks WHERE block_id = ? AND text = ? ")) {
+        // Verify data was actually inserted
+        try (PreparedStatement pstmt = connection.prepareStatement(
+            "SELECT * FROM blocks WHERE block_id = ? AND text = ? AND s3_object_id = ? ")) {
             
-    //         pstmt.setString(1, "block1");
-    //         pstmt.setString(2, "Test Block 1");
-    //         //pstmt.setInt(3, s3UserObjectId);
+            pstmt.setString(1, "block1");
+            pstmt.setString(2, "Test Block 1");
+            pstmt.setInt(3, s3UserObjectId);
 
-    //         try (ResultSet rs = pstmt.executeQuery()) {
-    //             assertTrue(rs.next(), "Block record should exist in database");
+            try (ResultSet rs = pstmt.executeQuery()) {
+                assertTrue(rs.next(), "Block record should exist in database");
                 
-    //             // Additional assertions to verify block details
-    //             assertEquals("LINE", rs.getString("block_type"));
-    //             assertEquals("HANDWRITING", rs.getString("text_type"));
-    //             assertEquals(1.0f, rs.getFloat("geometry_width"), 0.001);
-    //             assertEquals(2.0f, rs.getFloat("geometry_height"), 0.001);
-    //         }
-    //     }
-    // }
-
-    // @Test
-    // public void testSaveBlocksWithNullGeometry() throws SQLException {
-    //     // First, insert a S3 user object to get an ID
-    //     S3UserObject s3UserObject = new S3UserObject("test-bucket", "test-key", 123);
-    //     dao.saveS3UserObject(s3UserObject);
-
-    //     // Prepare blocks with null geometry
-    //     List<BlockDTO> blocks = new ArrayList<>();
-        
-    //     BlockDTO block1 = new BlockDTO();
-    //     block1.blockType = "LINE";
-    //     block1.id = "block2";
-    //     block1.textType = "PRINTED";
-    //     block1.text = "Test Block 2";
-    //     block1.geometry = null;
-        
-    //     blocks.add(block1);
-
-    //     // Add blocks to the S3 user object
-    //     s3UserObject.setBlocks(blocks);
-
-    //     // Save blocks
-    //     int insertedCount = dao.saveBlocks(s3UserObject);
-
-    //     // Verify insertion
-    //     assertEquals(1, insertedCount);
-
-    //     // Verify data was actually inserted
-    //     try (PreparedStatement pstmt = connection.prepareStatement(
-    //         "SELECT * FROM blocks WHERE block_id = ? AND text = ?")) {
-            
-    //         pstmt.setString(1, "block2");
-    //         pstmt.setString(2, "Test Block 2");
-
-    //         try (ResultSet rs = pstmt.executeQuery()) {
-    //             assertTrue(rs.next(), "Block record should exist in database");
-                
-    //             // Verify null geometry fields
-    //             assertTrue(rs.wasNull() || rs.getFloat("geometry_width") == 0);
-    //         }
-    //     }
-    // }
+                // Additional assertions to verify block details
+                assertEquals("LINE", rs.getString("block_type"));
+                assertEquals("HANDWRITING", rs.getString("text_type"));
+                assertEquals(1.0f, rs.getFloat("geometry_width"), 0.001);
+                assertEquals(2.0f, rs.getFloat("geometry_height"), 0.001);
+            }
+        }
+    }
 
     @AfterAll
     public static void tearDown() throws SQLException {
