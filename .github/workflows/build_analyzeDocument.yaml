@@ -10,7 +10,22 @@ jobs:
         runs-on: ubuntu-latest
         defaults:
             run:
-              working-directory: apps/analyzeDocument      
+              working-directory: apps/analyzeDocument
+        services:
+          postgres:
+            # Docker Hub image
+            image: postgres
+            env:
+              POSTGRES_PASSWORD: raditz
+              POSTGRES_USER: kakarott
+              POSTGRES_DB: DBZ
+            options: >-
+              --health-cmd pg_isready
+              --health-interval 10s
+              --health-timeout 5s
+              --health-retries 5
+            ports:
+              - 5432:5432      
         steps: 
           - uses: actions/checkout@v4
 
