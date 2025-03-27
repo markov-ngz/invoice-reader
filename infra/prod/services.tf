@@ -61,3 +61,52 @@ resource "aws_iam_role_policy_attachment" "s3_basic_execution" {
   role       = aws_iam_role.iam_for_lambda.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
 }
+
+
+resource "aws_iam_policy" "textract_analyze_document" {
+  name        = "TextractAnalyzeDocumentPolicy"
+  description = "Policy to allow Textract AnalyzeDocument actions"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = [
+          "textract:AnalyzeDocument",
+        ],
+        Effect   = "Allow",
+        Resource = "*", 
+      },
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "textract_analyze_document_attachment" {
+  role       = aws_iam_role.iam_for_lambda.name
+  policy_arn = aws_iam_policy.textract_analyze_document.arn
+}
+
+
+# Add SQS SendMessage permissions
+resource "aws_iam_policy" "sqs_send_message" {
+  name        = "SQSSendMessagePolicy"
+  description = "Policy to allow SQS SendMessage actions"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = [
+          "sqs:SendMessage",
+        ],
+        Effect   = "Allow",
+        Resource = aws_sqs_queue.analyzed_documents_queue.arn , # Replace with the actual ARN of your SQS queue
+      },
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "sqs_send_message_attachment" {
+  role       = aws_iam_role.iam_for_lambda.name
+  policy_arn = aws_iam_policy.sqs_send_message.arn
+}
