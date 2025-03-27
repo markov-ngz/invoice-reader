@@ -7,6 +7,7 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.lambda.runtime.logging.LogLevel;
+import com.amazonaws.lambda.thirdparty.com.fasterxml.jackson.databind.ObjectMapper;
 
 import analyzeDocument.S3UserObject;
 
@@ -15,13 +16,14 @@ public class Handler  implements RequestHandler<SQSEvent, String>{
     private static final Region DEFAULT_REGION = Region.EU_WEST_3;
     private  String QUEUE_URL ;
     private LambdaLogger logger;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public String handleRequest(SQSEvent event, Context context) {
         
         this.logger = context.getLogger();
 
-        // 1. Extract Message content
+        
         for(SQSMessage message : event.getRecords()){
 
             try {
@@ -32,7 +34,6 @@ public class Handler  implements RequestHandler<SQSEvent, String>{
         
         }
 
-        // 2. Write to Database with userId 
         
         return null ; 
     }
@@ -41,7 +42,20 @@ public class Handler  implements RequestHandler<SQSEvent, String>{
         
         logger.log("Starting processing Message with Id :" + message.getMessageId(),LogLevel.INFO) ; 
         
-        String body = message.getBody() ; 
+        // 1. Extract Message content
+        S3UserObject s3UserObject =  parseJson(message.getBody(), S3UserObject.class, objectMapper) ;
+
+        // 2. Write Message to Database
         
+    }
+
+    public static <T> T parseJson(String jsonMessage, Class<T> clazz, ObjectMapper objectMapper) {
+        
+        
+        try {
+            return objectMapper.readValue(jsonMessage, clazz);
+        } catch (Exception e) {
+            throw new RuntimeException("Error parsing JSON message", e);
+        }
     }
 }
