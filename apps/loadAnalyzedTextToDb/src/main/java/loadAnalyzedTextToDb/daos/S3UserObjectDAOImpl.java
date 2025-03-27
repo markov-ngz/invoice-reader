@@ -10,6 +10,8 @@ import loadAnalyzedTextToDb.dtos.BlockDTO;
 import loadAnalyzedTextToDb.dtos.S3UserObject;
 
 public class S3UserObjectDAOImpl implements S3UserObjectDAO {
+
+    
     private final Connection connection;
 
     public S3UserObjectDAOImpl(Connection connection) {
@@ -18,26 +20,24 @@ public class S3UserObjectDAOImpl implements S3UserObjectDAO {
 
     @Override
     public int saveS3UserObject(S3UserObject s3UserObject) throws SQLException {
-        String sql = "INSERT INTO s3_user_objects (bucket_name, object_key, user_id) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO s3_user_objects (bucket_name, object_key, user_id) VALUES (?, ?, ?) RETURNING id";
         
         try (PreparedStatement pstmt = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
             pstmt.setString(1, s3UserObject.getBucketName());
             pstmt.setString(2, s3UserObject.getObjectKey());
             pstmt.setInt(3, s3UserObject.getUserId());
             
-            return pstmt.executeUpdate();
+            return  pstmt.executeUpdate();
         }
     }
 
     @Override
-    public int saveBlocks(S3UserObject s3UserObject) throws SQLException {
+    public int saveBlocks(S3UserObject s3UserObject, int s3ObjectId) throws SQLException {
         String sql = "INSERT INTO blocks " +
                      "(s3_object_id, block_type, block_id, text_type, text, " +
                      "geometry_width, geometry_height, geometry_left, geometry_top) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                     "VALUES ((SELECT id FROM s3_user_objects WHERE id = ?), ?, ?, ?, ?, ?, ?, ?, ?)";
         
-        // Assuming you've just inserted the S3 user object and want to use its generated ID
-        int s3ObjectId = getCurrentGeneratedId();
         
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             int insertedCount = 0;
@@ -76,14 +76,4 @@ public class S3UserObjectDAOImpl implements S3UserObjectDAO {
         }
     }
 
-    // Helper method to get the last inserted ID (implementation depends on your database)
-    private int getCurrentGeneratedId() throws SQLException {
-        try (PreparedStatement pstmt = connection.prepareStatement("SELECT LAST_INSERT_ID()")) {
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
-            throw new SQLException("Unable to retrieve last inserted ID");
-        }
-    }
 }

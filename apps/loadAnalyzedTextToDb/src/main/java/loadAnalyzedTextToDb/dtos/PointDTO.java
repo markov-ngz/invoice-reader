@@ -7,7 +7,10 @@ public class PointDTO {
     public float y;
 
     public PointDTO(Point point) {
-        this.x = point.x();
-        this.y = point.y();
+        if(point != null){
+            this.x = point.x();
+            this.y = point.y();
+        }
+
     } 
 }

@@ -16,13 +16,16 @@ public class BlockDTO {
 
 
     public BlockDTO(Block block) {
-        this.blockType = block.blockTypeAsString();
-        this.id = block.id();
-        this.textType = block.textTypeAsString() ; 
-        this.text = block.text() ; 
-        this.relationships = (block.relationships() != null)
-            ? block.relationships().stream().map(r -> r.typeAsString()).collect(Collectors.toList())
-            : null;
-        this.geometry = (block.geometry() != null) ? new GeometryDTO(block.geometry()) : null;
+        if(block != null){
+            this.blockType = block.blockTypeAsString();
+            this.id = block.id();
+            this.textType = block.textTypeAsString() ; 
+            this.text = block.text() ; 
+            this.relationships = (block.relationships() != null)
+                ? block.relationships().stream().map(r -> r.typeAsString()).collect(Collectors.toList())
+                : null;
+            this.geometry = (block.geometry() != null) ? new GeometryDTO(block.geometry()) : null;
+        }
+
     }
 }

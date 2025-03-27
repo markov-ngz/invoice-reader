@@ -23,10 +23,10 @@ public class S3UserObjectService {
             connection.setAutoCommit(false);
 
             // Save the S3 user object first
-            dao.saveS3UserObject(s3UserObject);
+            int s3UserObjectId =  dao.saveS3UserObject(s3UserObject);
 
             // Then save its blocks
-            dao.saveBlocks(s3UserObject);
+            dao.saveBlocks(s3UserObject, s3UserObjectId);
 
             // Commit the transaction
             connection.commit();
