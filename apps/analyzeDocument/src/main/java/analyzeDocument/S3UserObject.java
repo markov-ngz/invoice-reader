@@ -1,6 +1,7 @@
 package analyzeDocument;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.amazonaws.lambda.thirdparty.com.fasterxml.jackson.databind.ObjectMapper;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
@@ -9,7 +10,7 @@ import software.amazon.awssdk.services.textract.model.Block;
 
 public class S3UserObject {
 
-    private List<Block> blocks ; 
+    private List<BlockDTO> blocks ; 
     private String bucketName; 
     private String objectKey;
     private int userId ;
@@ -57,12 +58,13 @@ public class S3UserObject {
 
     }
 
-    public List<Block> getBlocks(){
+    public List<BlockDTO> getBlocks(){
         return this.blocks ; 
     }
 
     public void setBlocks(List<Block> blocks){
-        this.blocks = blocks ; 
+        List<BlockDTO> blockDtos = blocks.stream().map( b -> new BlockDTO(b)).collect(Collectors.toList()) ; 
+        this.blocks = blockDtos ; 
     }
 
 }
