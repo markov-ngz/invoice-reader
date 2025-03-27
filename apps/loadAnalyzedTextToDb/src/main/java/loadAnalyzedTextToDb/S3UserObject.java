@@ -1,4 +1,4 @@
-package analyzeDocument;
+package loadAnalyzedTextToDb;
 
 import java.util.List;
 

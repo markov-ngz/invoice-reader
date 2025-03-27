@@ -9,7 +9,6 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.lambda.runtime.logging.LogLevel;
 import com.amazonaws.lambda.thirdparty.com.fasterxml.jackson.databind.ObjectMapper;
 
-import analyzeDocument.S3UserObject;
 
 public class Handler  implements RequestHandler<SQSEvent, String>{
 
