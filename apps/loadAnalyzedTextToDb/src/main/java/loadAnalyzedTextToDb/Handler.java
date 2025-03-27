@@ -7,6 +7,14 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.lambda.runtime.logging.LogLevel;
+
+import loadAnalyzedTextToDb.config.DatabaseConfig;
+import loadAnalyzedTextToDb.dtos.S3UserObject;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
 import com.amazonaws.lambda.thirdparty.com.fasterxml.jackson.databind.ObjectMapper;
 
 
@@ -22,6 +30,10 @@ public class Handler  implements RequestHandler<SQSEvent, String>{
         
         this.logger = context.getLogger();
 
+        DatabaseConfig databaseConfig = DatabaseConfig.load() ; 
+        
+        Connection connection = getConnection(databaseConfig) ; 
+
         
         for(SQSMessage message : event.getRecords()){
 
@@ -35,6 +47,20 @@ public class Handler  implements RequestHandler<SQSEvent, String>{
 
         
         return null ; 
+    }
+
+    private Connection getConnection(DatabaseConfig dbConfig){
+        try {
+            return DriverManager.getConnection(
+                dbConfig.getUrl() , // "jdbc:postgresql://localhost:5432/yourdatabase"  
+                dbConfig.getUsername() ,  
+                dbConfig.getPassword()
+             );            
+        } catch (SQLException e) {
+            logger.log(e.getMessage(), LogLevel.ERROR);
+            return null ; 
+        }
+
     }
 
     private void processMessage(SQSMessage message) throws Exception{
