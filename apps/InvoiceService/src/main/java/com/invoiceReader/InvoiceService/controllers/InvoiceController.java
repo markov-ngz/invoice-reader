@@ -1,7 +1,8 @@
 package com.invoiceReader.InvoiceService.controllers;
 
+import java.util.HashMap;
 import java.util.List;
-
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.invoiceReader.InvoiceService.services.FileService;
 import com.invoiceReader.InvoiceService.services.InvoiceService;
 import com.invoiceReader.InvoiceService.entities.Invoice;
 
@@ -25,8 +27,11 @@ import com.invoiceReader.InvoiceService.entities.Invoice;
 public class InvoiceController {
 
     private final InvoiceService invoiceService ; 
-    public InvoiceController(InvoiceService invoiceService){
-        this.invoiceService = invoiceService ; 
+    private final FileService fileService ; 
+
+    public InvoiceController(InvoiceService invoiceService, FileService fileService){
+        this.invoiceService = invoiceService ;
+        this.fileService = fileService ;  
     }
 
     @GetMapping
@@ -52,10 +57,17 @@ public class InvoiceController {
 
     @PostMapping(path="/file", consumes={MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<String> uploadInvoice(@RequestParam("file") MultipartFile file){
-        
-        String filename = file.getOriginalFilename() ; 
 
-        return ResponseEntity.status(HttpStatusCode.valueOf(201)).body(filename) ; 
+        Map<String,String> metadata = new HashMap<String,String>() ; 
+
+        metadata.put("x-amz-meta-userid","142") ; 
+        
+        try {
+            fileService.uploadFile(file.getBytes(), file.getOriginalFilename(), file.getContentType(), metadata);
+            return ResponseEntity.status(HttpStatusCode.valueOf(201)).body(file.getOriginalFilename()) ;
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatusCode.valueOf(500)).body(file.getOriginalFilename()) ;
+        }
     }
 
     @PutMapping
