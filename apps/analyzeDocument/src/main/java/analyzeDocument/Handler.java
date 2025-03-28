@@ -80,7 +80,13 @@ public class Handler implements RequestHandler<SQSEvent, String> {
             // Get S3Event notification 
             S3EventNotification s3EventNotification = S3EventNotification.fromJson(message.getBody()) ;  
             
-            // From the S3EventNotification extract the S3Objects concerned about the event 
+            // if there is no records continue
+            if(s3EventNotification.getRecords() == null ){
+                logger.log("No S3EventNotification Records were found", LogLevel.WARN);
+                continue ; 
+            }
+
+            // From the S3EventNotification extract the S3Objects concerned about the event
             List<S3> s3s = s3EventNotification.getRecords().stream().map( r -> r.getS3() ).collect(Collectors.toList()) ;
 
             // For each object 
