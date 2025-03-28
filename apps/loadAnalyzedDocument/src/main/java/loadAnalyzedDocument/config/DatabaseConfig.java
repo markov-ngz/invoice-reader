@@ -1,4 +1,4 @@
-// package loadAnalyzedTextToDb.config;
+// package loadAnalyzedDocument.config;
 
 // import java.util.Optional;
 

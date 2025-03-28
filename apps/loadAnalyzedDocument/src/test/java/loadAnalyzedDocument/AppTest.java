@@ -1,4 +1,4 @@
-package loadAnalyzedTextToDb;
+package loadAnalyzedDocument;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

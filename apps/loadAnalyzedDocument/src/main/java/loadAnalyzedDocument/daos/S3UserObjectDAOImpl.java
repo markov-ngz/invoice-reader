@@ -1,4 +1,4 @@
-// package loadAnalyzedTextToDb.daos ; 
+// package loadAnalyzedDocument.daos ; 
 
 // import java.sql.Connection;
 // import java.sql.PreparedStatement;
@@ -6,8 +6,8 @@
 // import java.sql.SQLException;
 // import java.util.List;
 
-// import loadAnalyzedTextToDb.dtos.BlockDTO;
-// import loadAnalyzedTextToDb.dtos.S3UserObject;
+// import loadAnalyzedDocument.dtos.BlockDTO;
+// import loadAnalyzedDocument.dtos.S3UserObject;
 
 // public class S3UserObjectDAOImpl implements S3UserObjectDAO {
 

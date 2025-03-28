@@ -1,4 +1,4 @@
-package loadAnalyzedTextToDb.dtos;
+package loadAnalyzedDocument.dtos;
 
 import java.util.List;
 
