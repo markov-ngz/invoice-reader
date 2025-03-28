@@ -1,4 +1,4 @@
-package loadAnalyzedTextToDb;
+package loadAnalyzedDocument;
 
 import software.amazon.awssdk.regions.Region;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -8,7 +8,7 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.lambda.runtime.logging.LogLevel;
 
-import loadAnalyzedTextToDb.dtos.AnalyzedDocumentDTO;
+import loadAnalyzedDocument.dtos.AnalyzedDocumentDTO;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -55,6 +55,16 @@ public class Handler  implements RequestHandler<SQSEvent, String>{
         return null ; 
     }
 
+    public static <T> T parseJson(String jsonMessage, Class<T> clazz, ObjectMapper objectMapper) {
+        
+        try {
+            return objectMapper.readValue(jsonMessage, clazz);
+        } catch (Exception e) {
+            throw new RuntimeException("Error parsing JSON message", e);
+        }
+    }
+
+
     // private Connection getConnection(DatabaseConfig dbConfig){
     //     try {
     //         return DriverManager.getConnection(
@@ -68,13 +78,4 @@ public class Handler  implements RequestHandler<SQSEvent, String>{
     //     }
 
     // }
-
-    public static <T> T parseJson(String jsonMessage, Class<T> clazz, ObjectMapper objectMapper) {
-        
-        try {
-            return objectMapper.readValue(jsonMessage, clazz);
-        } catch (Exception e) {
-            throw new RuntimeException("Error parsing JSON message", e);
-        }
-    }
 }

@@ -1,7 +1,7 @@
-// package loadAnalyzedTextToDb.daos;
+// package loadAnalyzedDocument.daos;
 // import java.sql.SQLException;
 
-// import loadAnalyzedTextToDb.dtos.S3UserObject;
+// import loadAnalyzedDocument.dtos.S3UserObject;
 
 // public interface S3UserObjectDAO {
 //     /**

@@ -1,11 +1,11 @@
-// package loadAnalyzedTextToDb.services;
+// package loadAnalyzedDocument.services;
 
 // import java.sql.Connection;
 // import java.sql.SQLException;
 
-// import loadAnalyzedTextToDb.daos.S3UserObjectDAO;
-// import loadAnalyzedTextToDb.daos.S3UserObjectDAOImpl;
-// import loadAnalyzedTextToDb.dtos.S3UserObject;
+// import loadAnalyzedDocument.daos.S3UserObjectDAO;
+// import loadAnalyzedDocument.daos.S3UserObjectDAOImpl;
+// import loadAnalyzedDocument.dtos.S3UserObject;
 
 // public class S3UserObjectService {
 
