@@ -1,6 +1,6 @@
-package analyzeDocument;
+package analyzeDocument.exceptions;
 
-class MessageProcessingException extends RuntimeException {
+public class MessageProcessingException extends RuntimeException {
     public MessageProcessingException(String message) {
         super(message);
     }

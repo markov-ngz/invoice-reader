@@ -12,6 +12,7 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.lambda.runtime.logging.LogLevel;
 
+
 import software.amazon.awssdk.eventnotifications.s3.model.S3;
 import software.amazon.awssdk.eventnotifications.s3.model.S3EventNotification ;
 import software.amazon.awssdk.eventnotifications.s3.model.S3EventNotificationRecord;
@@ -29,6 +30,9 @@ import software.amazon.awssdk.services.textract.TextractClient;
 import software.amazon.awssdk.services.textract.model.Block;
 import software.amazon.awssdk.services.textract.model.TextractException;
 
+import analyzeDocument.exceptions.*;
+import analyzeDocument.entities.S3UserObject;
+import analyzeDocument.services.TextractService;
 
 public class Handler implements RequestHandler<SQSEvent, String> {
 
