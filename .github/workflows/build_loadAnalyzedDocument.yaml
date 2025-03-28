@@ -1,4 +1,4 @@
-name: Build Load Analyzed Text To DB
+name: Build Load Analyzed Document
 
 on:
   pull_request:
@@ -6,11 +6,11 @@ on:
 
 jobs:
     test:
-        if: ${{ github.head_ref == 'loadAnalyzedTextToDb' }}
+        if: ${{ github.head_ref == 'loadAnalyzedDocument' }}
         runs-on: ubuntu-latest
         defaults:
             run:
-              working-directory: apps/loadAnalyzedTextToDb      
+              working-directory: apps/loadAnalyzedDocument      
         steps: 
           - uses: actions/checkout@v4
 
@@ -32,8 +32,8 @@ jobs:
           contents: read
         secrets: inherit
         with:
-            application_working_directory: apps/loadAnalyzedTextToDb
-            image_name: ${{ vars.TF_VAR_LOADANALYZEDTEXTTODB_IMAGE_REGISTRY }} # the tag is set to the commit id 
-            image_tag_variable: "loadAnalyzedTextToDb_image_tag"
+            application_working_directory: apps/loadAnalyzedDocument
+            image_name: ${{ vars.TF_VAR_LOADANALYZEDDOCUMENT_IMAGE_REGISTRY }} # the tag is set to the commit id 
+            image_tag_variable: "loadAnalyzedDocument_image_tag"
             registry_project: ${{ vars.AWS_PROJECT_ID}}
             registry_location: ${{ vars.AWS_REGION}}
