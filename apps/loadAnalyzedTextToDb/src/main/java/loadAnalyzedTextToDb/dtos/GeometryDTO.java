@@ -14,18 +14,17 @@ public class GeometryDTO {
     public List<PointDTO> polygon;
 
     public GeometryDTO(Geometry geometry) {
-        if(geometry != null){
-            if (geometry.boundingBox() != null) {
-                BoundingBox bbox = geometry.boundingBox();
-                this.width = bbox.width();
-                this.height = bbox.height();
-                this.left = bbox.left();
-                this.top = bbox.top();
-            }
-            this.polygon = (geometry.polygon() != null)
-                ? geometry.polygon().stream().map(PointDTO::new).collect(Collectors.toList())
-                : null;
+        if (geometry.boundingBox() != null) {
+            BoundingBox bbox = geometry.boundingBox();
+            this.width = bbox.width();
+            this.height = bbox.height();
+            this.left = bbox.left();
+            this.top = bbox.top();
         }
-
+        this.polygon = (geometry.polygon() != null)
+            ? geometry.polygon().stream().map(PointDTO::new).collect(Collectors.toList())
+            : null;
     }
+    
+    public GeometryDTO(){}
 }
