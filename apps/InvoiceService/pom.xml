@@ -8,11 +8,11 @@
 		<version>3.4.4</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.invoice-reader</groupId>
-	<artifactId>OCRService</artifactId>
+	<groupId>com.invoiceReader</groupId>
+	<artifactId>InvoiceService</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>OCRService</name>
-	<description>OCRService</description>
+	<name>InvoiceService</name>
+	<description>Invoice Service</description>
 	<url/>
 	<licenses>
 		<license/>

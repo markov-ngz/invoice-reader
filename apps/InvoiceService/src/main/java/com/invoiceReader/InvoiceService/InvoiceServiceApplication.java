@@ -1,13 +1,13 @@
-package com.invoice_reader.OCRService;
+package com.invoiceReader.InvoiceService;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class OcrServiceApplication {
+public class InvoiceServiceApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(OcrServiceApplication.class, args);
+		SpringApplication.run(InvoiceServiceApplication.class, args);
 	}
 
 }
