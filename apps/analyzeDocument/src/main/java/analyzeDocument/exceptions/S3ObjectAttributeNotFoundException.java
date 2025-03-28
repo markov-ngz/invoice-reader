@@ -1,4 +1,4 @@
-package analyzeDocument;
+package analyzeDocument.exceptions;
 
 public class S3ObjectAttributeNotFoundException extends Exception {
     public S3ObjectAttributeNotFoundException(String message) {

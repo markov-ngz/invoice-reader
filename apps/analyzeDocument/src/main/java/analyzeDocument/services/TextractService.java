@@ -1,4 +1,4 @@
-package analyzeDocument;
+package analyzeDocument.services;
 
 import java.util.List;
 

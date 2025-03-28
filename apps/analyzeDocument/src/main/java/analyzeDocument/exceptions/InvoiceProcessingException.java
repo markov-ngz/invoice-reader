@@ -1,7 +1,7 @@
-package analyzeDocument;
+package analyzeDocument.exceptions;
 
 // Custom exceptions for better error handling
-class InvoiceProcessingException extends RuntimeException {
+public class InvoiceProcessingException extends RuntimeException {
     public InvoiceProcessingException(String message) {
         super(message);
     }
