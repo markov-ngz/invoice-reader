@@ -1,4 +1,4 @@
-package analyzeDocument;
+package analyzeDocument.exceptions;
 
 public class TextExtractionException extends RuntimeException {
     public TextExtractionException(String message) {
