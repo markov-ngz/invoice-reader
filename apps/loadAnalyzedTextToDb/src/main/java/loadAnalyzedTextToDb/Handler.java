@@ -8,9 +8,7 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.lambda.runtime.logging.LogLevel;
 
-import loadAnalyzedTextToDb.config.DatabaseConfig;
-import loadAnalyzedTextToDb.dtos.S3UserObject;
-import loadAnalyzedTextToDb.services.S3UserObjectService;
+import loadAnalyzedTextToDb.dtos.AnalyzedDocumentDTO;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -21,8 +19,6 @@ import com.amazonaws.lambda.thirdparty.com.fasterxml.jackson.databind.ObjectMapp
 
 public class Handler  implements RequestHandler<SQSEvent, String>{
 
-    private static final Region DEFAULT_REGION = Region.EU_WEST_3;
-    private  String QUEUE_URL ;
     private LambdaLogger logger;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -33,16 +29,6 @@ public class Handler  implements RequestHandler<SQSEvent, String>{
 
         // 0.1 Logger
         this.logger = context.getLogger();
-
-        // 0.2.1 Database Config 
-        DatabaseConfig databaseConfig = DatabaseConfig.load() ; 
-        
-        // 0.2.2 Database Conn from Database Config
-        Connection connection = getConnection(databaseConfig) ; 
-
-        // 0.2.3 Instantiate service from Connection 
-        S3UserObjectService s3UserObjectService = new S3UserObjectService(connection) ; 
-
         
         for(SQSMessage message : event.getRecords()){
 
@@ -51,13 +37,13 @@ public class Handler  implements RequestHandler<SQSEvent, String>{
             try {    
         
                 // 1. Extract Message content
-                S3UserObject s3UserObject =  parseJson(message.getBody(), S3UserObject.class, objectMapper) ;
+                AnalyzedDocumentDTO analyzedDocument =  parseJson(message.getBody(), AnalyzedDocumentDTO.class, objectMapper) ;
         
                 logger.log("Succesfully parsed Message with Id :" + message.getMessageId(),LogLevel.INFO) ; 
         
-                // 2. Write Message to Database
-                s3UserObjectService.processAndStoreS3UserObject(s3UserObject);
-        
+                // 2. Write Value to API 
+                // TODO 
+
                 logger.log("Successfully processed message with Id" + message.getMessageId(),LogLevel.INFO) ; 
 
             } catch (Exception e) {
@@ -69,19 +55,19 @@ public class Handler  implements RequestHandler<SQSEvent, String>{
         return null ; 
     }
 
-    private Connection getConnection(DatabaseConfig dbConfig){
-        try {
-            return DriverManager.getConnection(
-                dbConfig.getUrl() , // "jdbc:postgresql://localhost:5432/yourdatabase"  
-                dbConfig.getUsername() ,  
-                dbConfig.getPassword()
-             );            
-        } catch (SQLException e) {
-            logger.log(e.getMessage(), LogLevel.ERROR);
-            return null ; 
-        }
+    // private Connection getConnection(DatabaseConfig dbConfig){
+    //     try {
+    //         return DriverManager.getConnection(
+    //             dbConfig.getUrl() , // "jdbc:postgresql://localhost:5432/yourdatabase"  
+    //             dbConfig.getUsername() ,  
+    //             dbConfig.getPassword()
+    //          );            
+    //     } catch (SQLException e) {
+    //         logger.log(e.getMessage(), LogLevel.ERROR);
+    //         return null ; 
+    //     }
 
-    }
+    // }
 
     public static <T> T parseJson(String jsonMessage, Class<T> clazz, ObjectMapper objectMapper) {
         
