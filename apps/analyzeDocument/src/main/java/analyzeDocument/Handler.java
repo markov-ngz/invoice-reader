@@ -49,17 +49,22 @@ public class Handler implements RequestHandler<SQSEvent, String> {
   @Override
   public String handleRequest(SQSEvent event, Context context) {
 
+      //----------- Setup -------------
+
+      // Logger instance 
       this.logger = context.getLogger();
       
       logger.log("Starting processing of SQSEvent with " + 
                  Optional.ofNullable(event.getRecords()).map(List::size).orElse(0) + 
                  " records", LogLevel.INFO);
-      
+      // Init clients 
       initializeClients();
       
+      // Instantiate services 
       S3Service s3Service = new S3Service(s3Client) ; 
       TextractService textractService =  new TextractService(textractClient) ; 
 
+      // Get destination queue 
       this.QUEUE_URL =  System.getenv("ANALYZED_DOCUMENT_QUEUE_URL") ; 
 
 
@@ -67,25 +72,31 @@ public class Handler implements RequestHandler<SQSEvent, String> {
 
       logger.log("Begginning message process", LogLevel.INFO);
 
+      //---------- Process Messages Event --------
       try {
 
         for(SQSMessage message : event.getRecords()){
             
+            // Get S3Event notification 
             S3EventNotification s3EventNotification = S3EventNotification.fromJson(message.getBody()) ;  
             
+            // From the S3EventNotification extract the S3Objects concerned about the event 
             List<S3> s3s = s3EventNotification.getRecords().stream().map( r -> r.getS3() ).collect(Collectors.toList()) ;
 
+            // For each object 
             for(S3 s3 : s3s){
                 
+                // 1. Extract userid from  metadata's file 
                 Map<String,String> metadata = s3Service.fetchMetadata(s3.getBucket().getName(), s3.getObject().getKey()) ; 
 
                 String userIdMetadata = metadata.get("userid") ; 
 
                 int userId = Integer.parseInt(userIdMetadata); 
 
+                // 2. Call Textract API 
                 List<Block> blocks= textractService.extractText(s3.getBucket().getName(), s3.getObject().getKey()) ; 
 
-               
+                // 3. Build the Payload 
                 AnalyzedDocumentDTO analyzedDocument = new AnalyzedDocumentDTO(
                     s3.getBucket().getName(), 
                     s3.getObject().getKey(), 
@@ -95,6 +106,7 @@ public class Handler implements RequestHandler<SQSEvent, String> {
 
                 String messageBody = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(analyzedDocument) ; 
 
+                // 4. Write to queue 
                 SendMessageRequest sendRequest = SendMessageRequest.builder()
                 .queueUrl(QUEUE_URL)
                 .messageBody(messageBody)
