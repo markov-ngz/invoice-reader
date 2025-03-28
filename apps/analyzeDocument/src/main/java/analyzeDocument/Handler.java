@@ -1,8 +1,9 @@
 package analyzeDocument;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.amazonaws.lambda.thirdparty.com.fasterxml.jackson.databind.ObjectMapper;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -15,23 +16,21 @@ import com.amazonaws.services.lambda.runtime.logging.LogLevel;
 
 import software.amazon.awssdk.eventnotifications.s3.model.S3;
 import software.amazon.awssdk.eventnotifications.s3.model.S3EventNotification ;
-import software.amazon.awssdk.eventnotifications.s3.model.S3EventNotificationRecord;
-import software.amazon.awssdk.eventnotifications.s3.model.S3Object;
+
 
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
-import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
-import software.amazon.awssdk.services.sqs.model.SqsException;
+
 
 import software.amazon.awssdk.services.textract.TextractClient;
 import software.amazon.awssdk.services.textract.model.Block;
-import software.amazon.awssdk.services.textract.model.TextractException;
+
 
 import analyzeDocument.exceptions.*;
-import analyzeDocument.entities.S3UserObject;
+import analyzeDocument.dtos.AnalyzedDocumentDTO;
+import analyzeDocument.services.S3Service;
 import analyzeDocument.services.TextractService;
 
 public class Handler implements RequestHandler<SQSEvent, String> {
@@ -49,33 +48,81 @@ public class Handler implements RequestHandler<SQSEvent, String> {
 
   @Override
   public String handleRequest(SQSEvent event, Context context) {
+
       this.logger = context.getLogger();
+      
       logger.log("Starting processing of SQSEvent with " + 
                  Optional.ofNullable(event.getRecords()).map(List::size).orElse(0) + 
                  " records", LogLevel.INFO);
       
       initializeClients();
+      
+      S3Service s3Service = new S3Service(s3Client) ; 
+      TextractService textractService =  new TextractService(textractClient) ; 
 
       this.QUEUE_URL =  System.getenv("ANALYZED_DOCUMENT_QUEUE_URL") ; 
+
 
       logger.log("Analyze Documents will be written to queue : " + this.QUEUE_URL, LogLevel.INFO );
 
       logger.log("Begginning message process", LogLevel.INFO);
+
       try {
-          processMessages(event);
-          logger.log("Processing completed successfully", LogLevel.INFO);
-          return "Success";
+
+        for(SQSMessage message : event.getRecords()){
+            
+            S3EventNotification s3EventNotification = S3EventNotification.fromJson(message.getBody()) ;  
+            
+            List<S3> s3s = s3EventNotification.getRecords().stream().map( r -> r.getS3() ).collect(Collectors.toList()) ;
+
+            for(S3 s3 : s3s){
+                
+                Map<String,String> metadata = s3Service.fetchMetadata(s3.getBucket().getName(), s3.getObject().getKey()) ; 
+
+                String userIdMetadata = metadata.get("userid") ; 
+
+                int userId = Integer.parseInt(userIdMetadata); 
+
+                List<Block> blocks= textractService.extractText(s3.getBucket().getName(), s3.getObject().getKey()) ; 
+
+               
+                AnalyzedDocumentDTO analyzedDocument = new AnalyzedDocumentDTO(
+                    s3.getBucket().getName(), 
+                    s3.getObject().getKey(), 
+                    userId, 
+                    s3.getObject().getUrlDecodedKey(), 
+                    blocks);
+
+                String messageBody = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(analyzedDocument) ; 
+
+                SendMessageRequest sendRequest = SendMessageRequest.builder()
+                .queueUrl(QUEUE_URL)
+                .messageBody(messageBody)
+                .delaySeconds(DEFAULT_SQS_DELAY_SECONDS)
+                .build();
+        
+                sqsClient.sendMessage(sendRequest);
+
+            }
+        }
       } catch (Exception e) {
-          logger.log("Fatal error during event processing: " + e.getMessage(), LogLevel.ERROR);
+          
+        logger.log("Fatal error during event processing: " + e.getMessage(), LogLevel.ERROR);
           throw new InvoiceProcessingException("Failed to process invoice event", e);
+
       } finally {
           closeClients();
       }
+        
+      logger.log("Processing completed successfully", LogLevel.INFO);
+
+      return "Success";
+
   }
 
   private void initializeClients() {
       
-    logger.log("Initializing AWS clients", LogLevel.DEBUG);
+      logger.log("Initializing AWS clients", LogLevel.DEBUG);
       
       try {
         
@@ -98,206 +145,23 @@ public class Handler implements RequestHandler<SQSEvent, String> {
     } catch (Exception e) {
           logger.log("Failed to initialize AWS clients: " + e.getMessage(), LogLevel.ERROR);
           throw new InvoiceProcessingException("Client initialization failed", e);
-      }
-  }
-
-
-  private void processMessages(SQSEvent event) {
-
-      if (event == null || event.getRecords() == null || event.getRecords().isEmpty()) {
-          logger.log("No records to process", LogLevel.WARN);
-          return;
-      }
-      
-      logger.log("Processing " + event.getRecords().size() + " messages", LogLevel.INFO);
-      
-      for (SQSMessage message : event.getRecords()) {
-          try {
-              processSingleMessage(message);
-          } catch (Exception e) {
-              throw new MessageProcessingException("Error processing message: " + e.getMessage() + ". Continuing with next message.") ; 
-          }
-      }
-  }
-  
-  private void processSingleMessage(SQSMessage message) {
-      if (message == null) {
-          logger.log("Null message received, skipping", LogLevel.ERROR);
-          return;
-      }
-      
-      String messageId = message.getMessageId();
-
-      logger.log("Processing message with ID: " + messageId, LogLevel.INFO);
-      
-      try {
-          // Parse the message body
-          List<S3UserObject> s3UserObjects = parseMessageBody(message);
-
-          if(s3UserObjects == null){
-            logger.log("No S3UserObject for" + message.getMessageId()) ; 
-            return ; 
-          }
-
-          processS3UserObjects(s3UserObjects) ; 
-          
-          logger.log("Successfully processed message: " + messageId, LogLevel.INFO);
-
-      } catch (Exception e) {
-          logger.log("Failed to process message " + messageId + ": " + e.getMessage(), LogLevel.ERROR);
-          throw new MessageProcessingException("Error processing message: " + messageId, e);
-      }
-  }
-  
-  private List<S3UserObject> parseMessageBody(SQSMessage message) {
-
-      logger.log("Parsing message body" , LogLevel.DEBUG);
-      
-      try {
-          String messageBody = message.getBody();
-          
-          if (messageBody == null || messageBody.isEmpty()) {
-              throw new MessageProcessingException("Empty message body");
-          }
-          
-          S3EventNotification s3EventNotification = S3EventNotification.fromJson(messageBody) ; 
-
-          List<S3EventNotificationRecord> records = s3EventNotification.getRecords();
-
-          if(records == null ){
-
-            logger.log("No S3 Event found for Message Id" + message.getMessageId(), LogLevel.INFO) ;
-            
-            return null; 
-          }
-          List<S3UserObject> s3UserObjects = s3UserObjectsfromS3EventNotificationRecords(records, this.s3Client);
-
-          if (s3UserObjects.isEmpty()){
-            throw new MessageProcessingException("Failed to parse S3UserObject from message");
-          }
-         
-          return s3UserObjects ; 
-
-      } catch (Exception e) {
-          logger.log("Error parsing message body: " + e.getMessage(), LogLevel.ERROR);
-          throw new MessageProcessingException("Failed to parse message body", e);
-      }
-  }
-  private List<S3UserObject> s3UserObjectsfromS3EventNotificationRecords(List<S3EventNotificationRecord> records, S3Client s3Client) throws S3ObjectAttributeNotFoundException{
-        
-        List<S3UserObject> s3UserObjects = new ArrayList<S3UserObject>()  ; 
-
-        for (S3EventNotificationRecord record : records) {
-            
-            S3 s3 = record.getS3() ;
-
-            S3Object s3Object = s3.getObject() ; 
-
-            HeadObjectRequest headObjectRequest = HeadObjectRequest.builder()
-                    .bucket(s3.getBucket().getName())
-                    .key(s3Object.getKey())
-                    .build();
-
-            HeadObjectResponse headObjectResponse = s3Client.headObject(headObjectRequest);
-
-            // Get custom metadata
-            String userIdMetadata = headObjectResponse.metadata().get("userid"); // Metadata keys are lowercase
-
-            Integer userId = Integer.parseInt(userIdMetadata); 
-
-            if(userId != null){
-                S3UserObject s3UserObject = new S3UserObject(s3.getBucket().getName(),s3Object.getKey(),userId.intValue()) ; 
-
-                s3UserObjects.add(s3UserObject) ; 
-            }
-        }
-
-        return s3UserObjects ; 
-}
-
-  private void processS3UserObjects(List<S3UserObject> s3UserObjects){
-    for (S3UserObject s3UserObject : s3UserObjects) {
-        try {
-            processSingleS3UserObject(s3UserObject);    
-        } catch (Exception e) {
-
-            logger.log("Failed to process S3UserObject with objectKey : " + s3UserObject.getObjectKey() ,LogLevel.ERROR);
-            continue ; 
-            
-        }
-        
     }
   }
 
-  private void processSingleS3UserObject(S3UserObject s3UserObject) throws Exception{
-
-        // Extract text from S3 object
-        List<Block> textBlocks = extractTextFromDocument(s3UserObject);
-        
-        // Update the S3 object with extracted text
-        s3UserObject.setBlocks(textBlocks);
-        
-        // Send to output queue
-        sendToOutputQueue(s3UserObject);        
-
-
-    }
-
-  private List<Block> extractTextFromDocument(S3UserObject s3UserObject) throws TextractException, Exception {
-    String bucketName = s3UserObject.getBucketName();
-    String objectKey = s3UserObject.getObjectKey();
-    
-    logger.log("Extracting text from document in bucket: " + bucketName + ", key: " + objectKey, LogLevel.INFO);
-    
-    try {
-        return new TextractService(textractClient).extractText(bucketName, objectKey);
-    } catch (TextractException e) {
-        logger.log("Textract service error: " + e.getMessage(), LogLevel.ERROR);
-        throw new TextExtractionException("Failed to extract text using Textract", e);
-    } catch (Exception e) {
-        logger.log("Unexpected error during text extraction: " + e.getMessage(), LogLevel.ERROR);
-        throw new TextExtractionException("Unexpected error during text extraction", e);
-    }
-}
-
-  
-  private void sendToOutputQueue(S3UserObject s3UserObject) {
-      logger.log("Sending processed document to output queue", LogLevel.INFO);
-      
-      try {
-          String messageBody = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(s3UserObject);
-          
-          SendMessageRequest sendRequest = SendMessageRequest.builder()
-                  .queueUrl(QUEUE_URL)
-                  .messageBody(messageBody)
-                  .delaySeconds(DEFAULT_SQS_DELAY_SECONDS)
-                  .build();
-          
-          sqsClient.sendMessage(sendRequest);
-          
-          logger.log("Successfully sent message to output queue", LogLevel.INFO);
-      } catch (SqsException e) {
-          logger.log("SQS service error: " + e.getMessage(), LogLevel.ERROR);
-          throw new MessageSendException("Failed to send message to SQS", e);
-      } catch (Exception e) {
-          logger.log("Error sending message to output queue: " + e.getMessage(), LogLevel.ERROR);
-          throw new MessageSendException("Error sending message to output queue", e);
-      }
-  }
 
   private void closeClients() {
-    logger.log("Closing AWS clients", LogLevel.DEBUG);
-    
-    try {
-        if (textractClient != null) {
-            textractClient.close();
-        }
+        logger.log("Closing AWS clients", LogLevel.DEBUG);
         
-        if (sqsClient != null) {
-            sqsClient.close();
+        try {
+            if (textractClient != null) {
+                textractClient.close();
+            }
+            
+            if (sqsClient != null) {
+                sqsClient.close();
+            }
+        } catch (Exception e) {
+            logger.log("Error while closing clients: " + e.getMessage(), LogLevel.WARN);
         }
-    } catch (Exception e) {
-        logger.log("Error while closing clients: " + e.getMessage(), LogLevel.WARN);
     }
-}
 }
