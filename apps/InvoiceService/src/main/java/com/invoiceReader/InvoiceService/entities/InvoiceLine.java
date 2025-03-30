@@ -11,6 +11,6 @@ public class InvoiceLine {
     private int quantity;
     private double unitPrice;
     private String tax  ;
-    private double totalAmount ; 
+    private double amount ; 
 
 }
