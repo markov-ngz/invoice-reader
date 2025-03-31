@@ -29,10 +29,12 @@ import software.amazon.awssdk.services.textract.model.Block;
 
 
 import analyzeDocument.exceptions.*;
-import analyzeDocument.dtos.AnalyzedDocumentDTO;
+import analyzeDocument.dtos.AnalyzedInvoiceDTO;
+import analyzeDocument.dtos.InvoiceDTO;
 import analyzeDocument.services.S3Service;
 import analyzeDocument.services.TextractService;
 import analyzeDocument.services.mistral.MistralAnalyzeDocumentResponse;
+import analyzeDocument.services.mistral.MistralChoice;
 import analyzeDocument.services.mistral.MistralFileSignedUrlResponse;
 import analyzeDocument.services.mistral.MistralService;
 import analyzeDocument.services.mistral.MistralUploadFileResponse;
@@ -113,13 +115,15 @@ public class Handler implements RequestHandler<SQSEvent, String> {
                 // List<Block> blocks= textractService.extractText(s3.getBucket().getName(), s3.getObject().getKey()) ; 
                 MistralAnalyzeDocumentResponse mistralAnalyzeDocumentResponse = mistralDocumentUnderstanding(fileBytes, s3.getObject().getKey());
 
+                List<InvoiceDTO> mistralChoices = mistralAnalyzeDocumentResponse.getChoices().stream().map( m -> parseInvoiceFromMistralResponse(m)) ; 
+
                 // 4. Build the Payload 
-                AnalyzedDocumentDTO analyzedDocument = new AnalyzedDocumentDTO(
+                AnalyzedInvoiceDTO analyzedDocument = new AnalyzedInvoiceDTO(
                     s3.getBucket().getName(), 
                     s3.getObject().getKey(), 
                     userId, 
                     s3.getObject().getUrlDecodedKey(), 
-                    blocks);
+                   );
 
                 String messageBody = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(analyzedDocument) ; 
 
@@ -253,6 +257,18 @@ public class Handler implements RequestHandler<SQSEvent, String> {
         } finally {
             // 4. Delete File 
             mistralService.deleteFile(fileId) ;
+        }
+        
+    }
+
+    public InvoiceDTO parseInvoiceFromMistralChoice(MistralChoice mistralChoice) throws Exception{
+
+        String invoiceJson =  mistralChoice.getMessage().getContent().get(0).get("text") ; 
+        try {
+            return objectMapper.readValue(invoiceJson, InvoiceDTO.class) ; 
+        } catch (Exception e) {
+          e.printStackTrace();
+          return null ; 
         }
         
     }
