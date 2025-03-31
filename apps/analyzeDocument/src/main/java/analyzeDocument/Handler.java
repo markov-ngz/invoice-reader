@@ -32,12 +32,15 @@ import analyzeDocument.exceptions.*;
 import analyzeDocument.dtos.AnalyzedDocumentDTO;
 import analyzeDocument.services.S3Service;
 import analyzeDocument.services.TextractService;
+import analyzeDocument.services.mistral.MistralAnalyzeDocumentResponse;
+import analyzeDocument.services.mistral.MistralService;
 
 public class Handler implements RequestHandler<SQSEvent, String> {
 
   private static final Region DEFAULT_REGION = Region.EU_WEST_3;
   private  String QUEUE_URL ;
   private static final int DEFAULT_SQS_DELAY_SECONDS = 10;
+  private static final String mistralApiKeyEnvVariable = "MISTRAL_API_KEY" ; 
   
   private final ObjectMapper objectMapper = new ObjectMapper();
   
@@ -63,6 +66,7 @@ public class Handler implements RequestHandler<SQSEvent, String> {
       // Instantiate services 
       S3Service s3Service = new S3Service(s3Client) ; 
       TextractService textractService =  new TextractService(textractClient) ; 
+      MistralService mistralService = new MistralService(mistralApiKeyEnvVariable) ; 
 
       // Get destination queue 
       this.QUEUE_URL =  System.getenv("ANALYZED_DOCUMENT_QUEUE_URL") ; 
