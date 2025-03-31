@@ -56,7 +56,7 @@ public class MistralService {
         }      
     }
 
-    public String analyzeDocument( String prompt, String model , String documentUrl) throws Exception{
+    public MistralAnalyzeDocumentResponse analyzeDocument( String prompt, String model , String documentUrl) throws Exception{
 
         String url = baseUrl + chatCompletionEndpoint ; 
 
@@ -78,7 +78,12 @@ public class MistralService {
             return  httpClient.execute(httpPost, response -> {
                 System.out.println("Status: " + response.getCode() + " " + response.getReasonPhrase());
                 HttpEntity responseEntity = response.getEntity();
-                return responseEntity != null ? EntityUtils.toString(responseEntity) : null;
+                if(responseEntity != null){
+                    String jsonResponse = EntityUtils.toString(responseEntity) ; 
+                    return objectMapper.readValue(jsonResponse, MistralAnalyzeDocumentResponse.class) ; 
+                }else{
+                    return null ; 
+                }
             });
         }
      }

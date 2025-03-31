@@ -33,7 +33,9 @@ import analyzeDocument.dtos.AnalyzedDocumentDTO;
 import analyzeDocument.services.S3Service;
 import analyzeDocument.services.TextractService;
 import analyzeDocument.services.mistral.MistralAnalyzeDocumentResponse;
+import analyzeDocument.services.mistral.MistralFileSignedUrlResponse;
 import analyzeDocument.services.mistral.MistralService;
+import analyzeDocument.services.mistral.MistralUploadFileResponse;
 
 public class Handler implements RequestHandler<SQSEvent, String> {
 
@@ -48,6 +50,7 @@ public class Handler implements RequestHandler<SQSEvent, String> {
   private SqsClient sqsClient;
   private LambdaLogger logger;
   private S3Client s3Client ; 
+  private MistralService mistralService ; 
 
   @Override
   public String handleRequest(SQSEvent event, Context context) {
@@ -66,7 +69,7 @@ public class Handler implements RequestHandler<SQSEvent, String> {
       // Instantiate services 
       S3Service s3Service = new S3Service(s3Client) ; 
       TextractService textractService =  new TextractService(textractClient) ; 
-      MistralService mistralService = new MistralService(mistralApiKeyEnvVariable) ; 
+      this.mistralService = new MistralService(mistralApiKeyEnvVariable) ; 
 
       // Get destination queue 
       this.QUEUE_URL =  System.getenv("ANALYZED_DOCUMENT_QUEUE_URL") ; 
@@ -103,10 +106,14 @@ public class Handler implements RequestHandler<SQSEvent, String> {
 
                 int userId = Integer.parseInt(userIdMetadata); 
 
-                // 2. Call Textract API 
-                List<Block> blocks= textractService.extractText(s3.getBucket().getName(), s3.getObject().getKey()) ; 
+                // 2. Download file bytes 
+                byte[] fileBytes = s3Service.downloadFileBytes(s3.getBucket().getName(), s3.getObject().getKey()) ; 
 
-                // 3. Build the Payload 
+                // 3. Call Textract API 
+                // List<Block> blocks= textractService.extractText(s3.getBucket().getName(), s3.getObject().getKey()) ; 
+                MistralAnalyzeDocumentResponse mistralAnalyzeDocumentResponse = mistralDocumentUnderstanding(fileBytes, s3.getObject().getKey());
+
+                // 4. Build the Payload 
                 AnalyzedDocumentDTO analyzedDocument = new AnalyzedDocumentDTO(
                     s3.getBucket().getName(), 
                     s3.getObject().getKey(), 
@@ -116,7 +123,7 @@ public class Handler implements RequestHandler<SQSEvent, String> {
 
                 String messageBody = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(analyzedDocument) ; 
 
-                // 4. Write to queue 
+                // 5. Write to queue 
                 SendMessageRequest sendRequest = SendMessageRequest.builder()
                 .queueUrl(QUEUE_URL)
                 .messageBody(messageBody)
@@ -170,7 +177,6 @@ public class Handler implements RequestHandler<SQSEvent, String> {
     }
   }
 
-
   private void closeClients() {
         logger.log("Closing AWS clients", LogLevel.DEBUG);
         
@@ -186,4 +192,69 @@ public class Handler implements RequestHandler<SQSEvent, String> {
             logger.log("Error while closing clients: " + e.getMessage(), LogLevel.WARN);
         }
     }
+
+
+    public MistralAnalyzeDocumentResponse mistralDocumentUnderstanding(byte[] fileBytes , String fileName ) throws Exception{
+
+        ObjectMapper objectMapper = new ObjectMapper() ;
+
+        String model =  "mistral-small-latest"; 
+        String prompt = """
+                Ne Répond que par le payload JSON suivant ( avec les bons datatypes ) en complétant les champs via les informations trouvées sur la facture donnée :
+                ```
+                {
+                    "invoiceNumber": <string> , 
+                    "invoiceDate" : <date> ,
+                    "supplier" : <string> , 
+                    "supplierAdress" : <string> , 
+                    "customerName" : <string>,
+                    "customerAdress" : <string> , 
+                    "invoiceLines" :[
+                        {
+                            "description" : <string> , 
+                            "quantity" : <int> , 
+                            "unitPrice" : <double> , 
+                            "tax" : <string> ,
+                            "amount" : <double>
+                        },
+                        ...
+                    ], 
+                    "totalAmount" : <double> 
+                }
+                ``` 
+                Si des informations ne peuvent pas être extraites, met une valeur nulle ou une liste vide .
+                """;
+
+        // 1. Upload file 
+        MistralUploadFileResponse mistralUploadFileResponse =  mistralService.uploadFile("EDFFacture2.pdf", fileBytes) ; 
+        
+        
+        String fileId = mistralUploadFileResponse.getId() ; 
+
+
+
+        try {
+
+            // 2. Get File URL 
+            MistralFileSignedUrlResponse mistralFileSignedUrlResponse = mistralService.getFileSignedURL(fileId) ; 
+            
+            
+            // 3. Use this file to make the prompt and get response  
+            String documentUrl = mistralFileSignedUrlResponse.getUrl() ;
+
+            System.out.println(documentUrl)  ;
+    
+            MistralAnalyzeDocumentResponse mistralAnalyzedDocumentResponse =  mistralService.analyzeDocument(prompt, model, documentUrl) ;
+            
+            return mistralAnalyzedDocumentResponse ; 
+
+        } catch (Exception e) {
+            throw e ;
+        } finally {
+            // 4. Delete File 
+            mistralService.deleteFile(fileId) ;
+        }
+        
+    }
+
 }
