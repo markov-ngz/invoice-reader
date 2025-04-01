@@ -5,10 +5,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class MistralAnalyzeDocumentPayload {
     public String model ;
 
-    public String role = "user" ; 
+    @JsonIgnore
+    public String role = "user" ;
+
     public List<MistralMessage> messages = new ArrayList<MistralMessage>() ; 
     
     public int document_image_limit = 8 ; 

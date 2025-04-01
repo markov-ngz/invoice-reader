@@ -1,6 +1,5 @@
 package analyzeDocument.services.mistral;
 
-
 import org.apache.hc.client5.http.classic.methods.HttpDelete;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
@@ -79,7 +78,8 @@ public class MistralService {
                 System.out.println("Status: " + response.getCode() + " " + response.getReasonPhrase());
                 HttpEntity responseEntity = response.getEntity();
                 if(responseEntity != null){
-                    String jsonResponse = EntityUtils.toString(responseEntity) ; 
+                    String jsonResponse = EntityUtils.toString(responseEntity) ;
+                    System.out.println(jsonResponse); 
                     return objectMapper.readValue(jsonResponse, MistralAnalyzeDocumentResponse.class) ; 
                 }else{
                     return null ; 

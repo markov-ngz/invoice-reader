@@ -3,9 +3,8 @@ package analyzeDocument.services.mistral;
 import lombok.Data;
 
 @Data
-public class MistralChoice {
+public class MistralChoiceDTO {
     int index ; 
     String finish_reason ;
-    MistralMessage message ; 
-
+    MistralMessageDTO message ; 
 }

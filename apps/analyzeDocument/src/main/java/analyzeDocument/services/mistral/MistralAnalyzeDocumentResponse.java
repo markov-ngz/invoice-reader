@@ -12,6 +12,6 @@ public class MistralAnalyzeDocumentResponse {
     String object ; 
     BigInteger created ;
     String model ;
-    List<MistralChoice> choices ;
-    Map<String,String> usage ; 
+    List<MistralChoiceDTO> choices ;
+    Map<String,Integer> usage ; 
 }

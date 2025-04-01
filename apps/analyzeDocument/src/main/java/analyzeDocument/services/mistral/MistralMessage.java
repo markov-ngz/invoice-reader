@@ -5,16 +5,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import lombok.Data;
 
 @Data
 public class MistralMessage {
 
     public String role ; 
     public List<Map<String,String>> content = new ArrayList<Map<String,String>>();
-    public String tool_calls ; 
     
+    // public List<Map<String,String>> tool_calls = new ArrayList<Map<String,String>>();
+    
+    @JsonIgnore
     public MistralMessage(String role , String text, String documentUrl){
         
         this.role = role ; 
