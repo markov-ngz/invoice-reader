@@ -49,7 +49,6 @@ public class Handler implements RequestHandler<SQSEvent, String> {
   
   private final ObjectMapper objectMapper = new ObjectMapper();
   
-  private TextractClient textractClient;
   private SqsClient sqsClient;
   private LambdaLogger logger;
   private S3Client s3Client ; 
@@ -71,7 +70,6 @@ public class Handler implements RequestHandler<SQSEvent, String> {
       
       // Instantiate services 
       S3Service s3Service = new S3Service(s3Client) ; 
-      TextractService textractService =  new TextractService(textractClient) ; 
       this.mistralService = new MistralService(mistralApiKeyEnvVariable) ; 
 
       // Get destination queue 
@@ -99,35 +97,46 @@ public class Handler implements RequestHandler<SQSEvent, String> {
             // From the S3EventNotification extract the S3Objects concerned about the event
             List<S3> s3s = s3EventNotification.getRecords().stream().map( r -> r.getS3() ).collect(Collectors.toList()) ;
 
+            logger.log(String.format("S3 Event Notification objects count : %s", s3s.size()),LogLevel.INFO);
+
             // For each object 
             for(S3 s3 : s3s){
+
+                logger.log(String.format("Beggining process for file with bucket : %s and  name : %s",s3.getBucket().getName(), s3.getObject().getKey()), LogLevel.INFO);
                 
                 // 1. Extract userid from  metadata's file 
                 Map<String,String> metadata = s3Service.fetchMetadata(s3.getBucket().getName(), s3.getObject().getKey()) ; 
 
-                String userIdMetadata = metadata.get("userid") ; 
+                String invoiceIdMetadata = metadata.get("invoiceId") ; 
 
-                int userId = Integer.parseInt(userIdMetadata); 
+                logger.log(String.format("File : %s , has metadata invoiceId : %s", s3.getObject().getKey(), invoiceIdMetadata), LogLevel.INFO);
+
+                int invoiceId = Integer.parseInt(invoiceIdMetadata); 
 
                 // 2. Download file bytes 
                 byte[] fileBytes = s3Service.downloadFileBytes(s3.getBucket().getName(), s3.getObject().getKey()) ; 
 
-                // 3. Call Textract API 
-                // List<Block> blocks= textractService.extractText(s3.getBucket().getName(), s3.getObject().getKey()) ; 
+                logger.log(String.format("Sucessfully downloaded bytes for file %s , file bytes %s", s3.getObject().getKey(), fileBytes.length), LogLevel.INFO);
+
+                // 3. Extract Invoice Information
                 MistralAnalyzeDocumentResponse mistralAnalyzeDocumentResponse = mistralDocumentUnderstanding(fileBytes, s3.getObject().getKey());
 
                 List<InvoiceDTO> invoiceDTOs = mistralAnalyzeDocumentResponse.getChoices().stream().map( m -> parseInvoiceFromMistralChoice(m)).collect(Collectors.toList()) ; 
+
+                logger.log(String.format("Succesfully extracted information for %s invoice", invoiceDTOs), LogLevel.INFO) ; 
 
                 // 4. Build the Payload 
                 AnalyzedInvoiceDTO analyzedDocument = new AnalyzedInvoiceDTO(
                     s3.getBucket().getName(), 
                     s3.getObject().getKey(), 
                     s3.getObject().getUrlDecodedKey(),
-                    userId, 
+                    invoiceId, 
                     invoiceDTOs
-                   );
+                );
 
                 String messageBody = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(analyzedDocument) ; 
+
+                logger.log(messageBody, LogLevel.INFO);                
 
                 // 5. Write to queue 
                 SendMessageRequest sendRequest = SendMessageRequest.builder()
@@ -160,11 +169,7 @@ public class Handler implements RequestHandler<SQSEvent, String> {
       logger.log("Initializing AWS clients", LogLevel.DEBUG);
       
       try {
-        
-        this.textractClient = TextractClient.builder()
-                  .region(DEFAULT_REGION)
-                  .build();
-          
+
         this.sqsClient = SqsClient.builder()
                   .region(DEFAULT_REGION)
                   .build();
@@ -173,7 +178,6 @@ public class Handler implements RequestHandler<SQSEvent, String> {
             .builder()
             .region(DEFAULT_REGION)
             .build();
-        
           
         logger.log("AWS clients initialized successfully", LogLevel.DEBUG);
       
@@ -187,9 +191,6 @@ public class Handler implements RequestHandler<SQSEvent, String> {
         logger.log("Closing AWS clients", LogLevel.DEBUG);
         
         try {
-            if (textractClient != null) {
-                textractClient.close();
-            }
             
             if (sqsClient != null) {
                 sqsClient.close();
@@ -237,7 +238,7 @@ public class Handler implements RequestHandler<SQSEvent, String> {
         
         String fileId = mistralUploadFileResponse.getId() ; 
 
-
+        logger.log(fileId, LogLevel.INFO);
 
         try {
 
@@ -248,7 +249,7 @@ public class Handler implements RequestHandler<SQSEvent, String> {
             // 3. Use this file to make the prompt and get response  
             String documentUrl = mistralFileSignedUrlResponse.getUrl() ;
 
-            System.out.println(documentUrl)  ;
+            logger.log(documentUrl, LogLevel.INFO);
     
             MistralAnalyzeDocumentResponse mistralAnalyzedDocumentResponse =  mistralService.analyzeDocument(prompt, model, documentUrl) ;
             
