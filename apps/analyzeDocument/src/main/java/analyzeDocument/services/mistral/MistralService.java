@@ -78,8 +78,7 @@ public class MistralService {
                 System.out.println("Status: " + response.getCode() + " " + response.getReasonPhrase());
                 HttpEntity responseEntity = response.getEntity();
                 if(responseEntity != null){
-                    String jsonResponse = EntityUtils.toString(responseEntity) ;
-                    System.out.println(jsonResponse); 
+                    String jsonResponse = EntityUtils.toString(responseEntity) ; 
                     return objectMapper.readValue(jsonResponse, MistralAnalyzeDocumentResponse.class) ; 
                 }else{
                     return null ; 
