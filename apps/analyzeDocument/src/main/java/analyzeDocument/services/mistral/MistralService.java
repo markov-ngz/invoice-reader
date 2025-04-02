@@ -29,9 +29,9 @@ public class MistralService {
 
     private String chatCompletionEndpoint = "/chat/completions" ; 
 
-    public MistralService(String apiKeyEnvVariables ){
+    public MistralService(String apiKey ){
         
-        this.apiKey  = System.getenv(apiKeyEnvVariables) ;
+        this.apiKey  = apiKey ;
 
     }
 
