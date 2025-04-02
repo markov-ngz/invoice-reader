@@ -27,6 +27,9 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 import software.amazon.awssdk.services.textract.TextractClient;
 import software.amazon.awssdk.services.textract.model.Block;
 
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
 
 import analyzeDocument.exceptions.*;
 import analyzeDocument.dtos.AnalyzedInvoiceDTO;
@@ -40,19 +43,23 @@ import analyzeDocument.services.mistral.MistralFileSignedUrlResponse;
 import analyzeDocument.services.mistral.MistralService;
 import analyzeDocument.services.mistral.MistralUploadFileResponse;
 
+
+
 public class Handler implements RequestHandler<SQSEvent, String> {
 
   private static final Region DEFAULT_REGION = Region.EU_WEST_3;
   private  String QUEUE_URL ;
   private static final int DEFAULT_SQS_DELAY_SECONDS = 10;
-  private static final String mistralApiKeyEnvVariable = "MISTRAL_API_KEY" ; 
+
+  private static final String mistralApiKeySecretName = "MISTRAL_API_KEY2" ; 
   
   private final ObjectMapper objectMapper = new ObjectMapper();
   
   private SqsClient sqsClient;
   private LambdaLogger logger;
   private S3Client s3Client ; 
-  private MistralService mistralService ; 
+  private SecretsManagerClient secretClient ; 
+  private MistralService mistralService ;
 
   @Override
   public String handleRequest(SQSEvent event, Context context) {
@@ -67,10 +74,12 @@ public class Handler implements RequestHandler<SQSEvent, String> {
                  " records", LogLevel.INFO);
       // Init clients 
       initializeClients();
+
+      final String mistralApiKey = getSecret(mistralApiKeySecretName) ;
       
       // Instantiate services 
       S3Service s3Service = new S3Service(s3Client) ; 
-      this.mistralService = new MistralService(mistralApiKeyEnvVariable) ; 
+      this.mistralService = new MistralService(mistralApiKey) ; 
 
       // Get destination queue 
       this.QUEUE_URL =  System.getenv("ANALYZED_DOCUMENT_QUEUE_URL") ; 
@@ -178,6 +187,10 @@ public class Handler implements RequestHandler<SQSEvent, String> {
             .builder()
             .region(DEFAULT_REGION)
             .build();
+
+        this.secretClient = SecretsManagerClient.builder()
+            .region(DEFAULT_REGION)
+            .build();
           
         logger.log("AWS clients initialized successfully", LogLevel.DEBUG);
       
@@ -199,6 +212,29 @@ public class Handler implements RequestHandler<SQSEvent, String> {
             logger.log("Error while closing clients: " + e.getMessage(), LogLevel.WARN);
         }
     }
+
+    private String getSecret(String secretName){
+
+        // Create a Secrets Manager client
+
+
+        GetSecretValueRequest getSecretValueRequest = GetSecretValueRequest.builder()
+            .secretId(secretName)
+            .build();
+
+        try {
+            
+            GetSecretValueResponse getSecretValueResponse = this.secretClient.getSecretValue(getSecretValueRequest);
+            return getSecretValueResponse.secretString();
+
+        } catch (Exception e) {
+            // For a list of exceptions thrown, see
+            // https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
+            e.printStackTrace();
+            return null ;
+        }
+    }
+    
 
 
     public MistralAnalyzeDocumentResponse mistralDocumentUnderstanding(byte[] fileBytes , String fileName ) throws Exception{
