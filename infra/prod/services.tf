@@ -70,8 +70,8 @@ resource "aws_iam_policy" "secretsmanager_get_secret_value" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect   = "Allow",
-        Action   = [
+        Effect = "Allow",
+        Action = [
           "secretsmanager:GetSecretValue",
         ],
         Resource = "*",
@@ -98,7 +98,7 @@ resource "aws_iam_policy" "textract_analyze_document" {
           "textract:AnalyzeDocument",
         ],
         Effect   = "Allow",
-        Resource = "*", 
+        Resource = "*",
       },
     ]
   })
@@ -123,7 +123,7 @@ resource "aws_iam_policy" "sqs_send_message" {
           "sqs:SendMessage",
         ],
         Effect   = "Allow",
-        Resource = aws_sqs_queue.analyzed_documents_queue.arn , # Replace with the actual ARN of your SQS queue
+        Resource = aws_sqs_queue.analyzed_documents_queue.arn, # Replace with the actual ARN of your SQS queue
       },
     ]
   })
