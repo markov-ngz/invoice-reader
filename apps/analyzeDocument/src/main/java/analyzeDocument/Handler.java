@@ -116,7 +116,7 @@ public class Handler implements RequestHandler<SQSEvent, String> {
                 // 1. Extract userid from  metadata's file 
                 Map<String,String> metadata = s3Service.fetchMetadata(s3.getBucket().getName(), s3.getObject().getKey()) ; 
 
-                String invoiceIdMetadata = metadata.get("invoiceId") ; 
+                String invoiceIdMetadata = metadata.get("invoiceid") ; 
 
                 logger.log(String.format("File : %s , has metadata invoiceId : %s", s3.getObject().getKey(), invoiceIdMetadata), LogLevel.INFO);
 
