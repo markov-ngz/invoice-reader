@@ -222,21 +222,19 @@ public class Handler implements RequestHandler<SQSEvent, String> {
             .secretId(secretName)
             .build();
 
-        GetSecretValueResponse getSecretValueResponse;
-
         try {
-        getSecretValueResponse = this.secretClient.getSecretValue(getSecretValueRequest);
+            
+            GetSecretValueResponse getSecretValueResponse = this.secretClient.getSecretValue(getSecretValueRequest);
+            return getSecretValueResponse.secretString();
+
         } catch (Exception e) {
             // For a list of exceptions thrown, see
             // https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
             e.printStackTrace();
             return null ;
         }
-
-        return getSecretValueResponse.secretString();
-
-        }
     }
+    
 
 
     public MistralAnalyzeDocumentResponse mistralDocumentUnderstanding(byte[] fileBytes , String fileName ) throws Exception{
