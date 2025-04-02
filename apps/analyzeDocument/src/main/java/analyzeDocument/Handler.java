@@ -74,12 +74,18 @@ public class Handler implements RequestHandler<SQSEvent, String> {
                  " records", LogLevel.INFO);
       // Init clients 
       initializeClients();
+      try {
+        final String mistralApiKey = getSecret(mistralApiKeySecretName) ;
+        this.mistralService = new MistralService(mistralApiKey) ; 
+      } catch (Exception e) {
+        logger.log(e.getMessage(), LogLevel.ERROR);
+        return "Not ok"  ;
+      }
 
-      final String mistralApiKey = getSecret(mistralApiKeySecretName) ;
       
       // Instantiate services 
       S3Service s3Service = new S3Service(s3Client) ; 
-      this.mistralService = new MistralService(mistralApiKey) ; 
+      
 
       // Get destination queue 
       this.QUEUE_URL =  System.getenv("ANALYZED_DOCUMENT_QUEUE_URL") ; 
@@ -213,7 +219,7 @@ public class Handler implements RequestHandler<SQSEvent, String> {
         }
     }
 
-    private String getSecret(String secretName){
+    private String getSecret(String secretName) throws Exception{
 
         // Create a Secrets Manager client
 
@@ -231,7 +237,7 @@ public class Handler implements RequestHandler<SQSEvent, String> {
             // For a list of exceptions thrown, see
             // https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
             e.printStackTrace();
-            return null ;
+            throw e ; 
         }
     }
     
