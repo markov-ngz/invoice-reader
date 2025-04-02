@@ -227,9 +227,10 @@ public class Handler implements RequestHandler<SQSEvent, String> {
         try {
         getSecretValueResponse = this.secretClient.getSecretValue(getSecretValueRequest);
         } catch (Exception e) {
-        // For a list of exceptions thrown, see
-        // https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
-        throw e;
+            // For a list of exceptions thrown, see
+            // https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
+            e.printStackTrace();
+            return null ;
         }
 
         return getSecretValueResponse.secretString();
