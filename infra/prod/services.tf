@@ -11,6 +11,7 @@ resource "aws_lambda_function" "analyzeDocument" {
   package_type  = "Image"
   image_uri     = data.aws_ecr_image.analyzeDocument_image.image_uri
   timeout       = 30
+  memory_size = 512
 
   logging_config {
     log_format            = "JSON"
