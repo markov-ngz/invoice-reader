@@ -8,7 +8,7 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.lambda.runtime.logging.LogLevel;
 
-import loadAnalyzedDocument.dtos.AnalyzedDocumentDTO;
+import loadAnalyzedDocument.dtos.AnalyzedInvoiceDTO;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -37,7 +37,7 @@ public class Handler  implements RequestHandler<SQSEvent, String>{
             try {    
         
                 // 1. Extract Message content
-                AnalyzedDocumentDTO analyzedDocument =  parseJson(message.getBody(), AnalyzedDocumentDTO.class, objectMapper) ;
+                AnalyzedInvoiceDTO analyzedDocument =  parseJson(message.getBody(), AnalyzedInvoiceDTO.class, objectMapper) ;
         
                 logger.log("Succesfully parsed Message with Id :" + message.getMessageId(),LogLevel.INFO) ; 
         

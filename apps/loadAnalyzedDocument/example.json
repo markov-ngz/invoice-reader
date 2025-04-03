@@ -1,0 +1,35 @@
+{
+    "objectUrl" : "invoices/EDFFacture2.pdf",
+    "bucketName" : "invoice-reader-bucket",
+    "objectKey" : "invoices/EDFFacture2.pdf",
+    "invoiceId" : 156444,
+    "invoiceDTOs" : [ {
+      "id" : 0,
+      "invoiceNumber" : null,
+      "invoiceDate" : 1742256000000,
+      "supplier" : "EDF",
+      "supplierAdress" : null,
+      "customerName" : null,
+      "customerAdress" : null,
+      "invoiceLines" : [ {
+        "description" : "Abonnement Heures Creuses - 06kVA",
+        "quantity" : 1,
+        "unitPrice" : 11.48,
+        "tax" : "5,5%",
+        "amount" : 5.28
+      }, {
+        "description" : "Contribution Tarifaire d'Acheminement Electricité (CTA)",
+        "quantity" : 1,
+        "unitPrice" : 0.84,
+        "tax" : "5,5%",
+        "amount" : 0.84
+      }, {
+        "description" : "Mise en service (racc. exist. Linky Com)",
+        "quantity" : 1,
+        "unitPrice" : 1.45,
+        "tax" : "20,0%",
+        "amount" : 1.45
+      } ],
+      "totalAmount" : 8.2
+    } ]
+  }
