@@ -13,13 +13,13 @@ public class InvoiceDTO {
     private Date invoiceDate;
     
     private String supplier ; // Of course Id would be better with real links and entities but this is done as a POC for OCR not to create an ERP from scratch 
-    private String supplierAddress ;
+    private String supplierAdress ;
     
     
     private String customerName;
-    private String customerAddress;
+    private String customerAdress;
 
-    private List<InvoiceLineDTO> items;
+    private List<InvoiceLineDTO> invoiceLines;
     
     private double totalAmount;
 }
