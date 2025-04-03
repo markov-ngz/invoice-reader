@@ -9,8 +9,9 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import software.amazon.awssdk.services.textract.model.Block;
 
 import analyzeDocument.dtos.BlockDTO;
+import lombok.Data;
 
-
+@Data
 public class AnalyzedInvoiceDTO {
 
     private String objectUrl ; 
