@@ -17,12 +17,13 @@ import analyzeDocument.dtos.InvoiceDTO;
 
 public class TestAnalyzedInvoiceSerialization {
     @Test
-    public void testMissingRequiredEnvironmentVariables() {
+    public void testInvoiceDTOdeserialization() {
         InvoiceDTO invoiceDTO = new InvoiceDTO() ; 
         invoiceDTO.setCustomerName("A");
+        invoiceDTO.setCustomerAdress("5 r");
         invoiceDTO.setId(1564);
         invoiceDTO.setSupplier("B");
-        invoiceDTO.setSupplierAddress("4 r");
+        invoiceDTO.setSupplierAdress("4 r");
         invoiceDTO.setTotalAmount(12354.45);
         invoiceDTO.setInvoiceNumber("#46548");
         invoiceDTO.setInvoiceDate(null);
