@@ -9,27 +9,29 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import software.amazon.awssdk.services.textract.model.Block;
 
 import analyzeDocument.dtos.BlockDTO;
+import lombok.Data;
 
-
-public class AnalyzedDocumentDTO {
+@Data
+public class AnalyzedInvoiceDTO {
 
     private String objectUrl ; 
 
     private String bucketName; 
     private String objectKey;
     
-    private int userId ;
+    private int invoiceId ;
     
-    private List<BlockDTO> blocks ; 
+    private List<InvoiceDTO> invoiceDTOs ; 
 
-    public AnalyzedDocumentDTO(String bucketName, String objectKey, int userId , String objectUrl , List<Block> blocks ){
+    public AnalyzedInvoiceDTO(String bucketName, String objectKey, String objectUrl , int invoiceId , List<InvoiceDTO> invoiceDTOs ){
+        
         this.bucketName = bucketName ; 
         this.objectKey = objectKey ; 
         this.objectUrl = objectUrl ;
+        this.invoiceId = invoiceId ;
+        
+        this.invoiceDTOs = invoiceDTOs ; 
 
-        this.userId = userId ; 
-
-        this.blocks = blocks.stream().map( b -> new BlockDTO(b)).collect(Collectors.toList()) ;
     }
 
 }

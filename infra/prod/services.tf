@@ -11,6 +11,7 @@ resource "aws_lambda_function" "analyzeDocument" {
   package_type  = "Image"
   image_uri     = data.aws_ecr_image.analyzeDocument_image.image_uri
   timeout       = 30
+  memory_size = 512
 
   logging_config {
     log_format            = "JSON"
@@ -62,6 +63,30 @@ resource "aws_iam_role_policy_attachment" "s3_basic_execution" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
 }
 
+resource "aws_iam_policy" "secretsmanager_get_secret_value" {
+  name        = "SecretsManagerGetSecretValuePolicy"
+  description = "Policy to allow GetSecretValue from Secrets Manager"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:GetSecretValue"
+        ],
+        Resource = "*",
+      },
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "secretsmanager_get_secret_value_attachment" {
+  role       = aws_iam_role.iam_for_lambda.name
+  policy_arn = aws_iam_policy.secretsmanager_get_secret_value.arn
+}
+
 
 resource "aws_iam_policy" "textract_analyze_document" {
   name        = "TextractAnalyzeDocumentPolicy"
@@ -75,7 +100,7 @@ resource "aws_iam_policy" "textract_analyze_document" {
           "textract:AnalyzeDocument",
         ],
         Effect   = "Allow",
-        Resource = "*", 
+        Resource = "*",
       },
     ]
   })
@@ -100,7 +125,7 @@ resource "aws_iam_policy" "sqs_send_message" {
           "sqs:SendMessage",
         ],
         Effect   = "Allow",
-        Resource = aws_sqs_queue.analyzed_documents_queue.arn , # Replace with the actual ARN of your SQS queue
+        Resource = aws_sqs_queue.analyzed_documents_queue.arn, # Replace with the actual ARN of your SQS queue
       },
     ]
   })
