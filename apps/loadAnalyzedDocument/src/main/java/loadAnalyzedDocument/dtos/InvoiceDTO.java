@@ -1,4 +1,4 @@
-package analyzeDocument.dtos;
+package loadAnalyzedDocument.dtos;
 
 import java.sql.Date;
 import java.util.List;

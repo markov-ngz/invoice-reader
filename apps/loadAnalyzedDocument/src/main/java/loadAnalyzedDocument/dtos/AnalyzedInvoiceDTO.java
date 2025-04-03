@@ -1,14 +1,7 @@
 package loadAnalyzedDocument.dtos;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
-import com.amazonaws.lambda.thirdparty.com.fasterxml.jackson.databind.ObjectMapper;
-import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
-
-import software.amazon.awssdk.services.textract.model.Block;
-
-import analyzeDocument.dtos.BlockDTO;
 import lombok.Data;
 
 @Data
