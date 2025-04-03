@@ -26,7 +26,27 @@ data "aws_iam_policy_document" "queue" {
 resource "aws_sqs_queue" "s3_new_invoice" {
   name   = "s3-new-invoice-queue"
   policy = data.aws_iam_policy_document.queue.json
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.s3_new_invoice_deadletter.arn
+    maxReceiveCount     = 2
+  })
 }
+
+resource "aws_sqs_queue" "s3_new_invoice_deadletter" {
+  name = "s3_new_invoice-deadletter-queue"
+}
+
+resource "aws_sqs_queue_redrive_allow_policy" "s3_new_invoice_redrive_allow_policy" {
+  queue_url = aws_sqs_queue.s3_new_invoice_deadletter.id
+
+  redrive_allow_policy = jsonencode({
+    redrivePermission = "byQueue",
+    sourceQueueArns   = [aws_sqs_queue.s3_new_invoice.arn]
+  })
+}
+
+
+
 
 resource "aws_s3_bucket_notification" "bucket_notification" {
 
