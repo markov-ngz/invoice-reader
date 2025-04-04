@@ -1,0 +1,118 @@
+name: Build Invoice API
+
+on:
+  pull_request:
+    branches: main
+
+jobs:
+    test:
+        if: ${{ github.head_ref == 'OCRService' }}
+        runs-on: ubuntu-latest
+        outputs:
+          output1: ${{ steps.jar_artifact_name.outputs.jar_artifact_name }}
+        permissions:
+          id-token: write
+          contents: write
+        defaults:
+            run:
+              working-directory: apps/invoiceAPI  
+        services:
+          postgres:
+            # Docker Hub image
+            image: postgres
+            env:
+              POSTGRES_PASSWORD: raditz
+              POSTGRES_USER: kakarott
+              POSTGRES_DB: DBZ
+            options: >-
+              --health-cmd pg_isready
+              --health-interval 10s
+              --health-timeout 5s
+              --health-retries 5
+            ports:
+              - 5432:5432
+          
+        steps: 
+          - uses: actions/checkout@v4
+
+          - name: Set up JDK 21
+            uses: actions/setup-java@v4
+            with:
+              java-version: '21'
+              distribution: 'temurin'
+              cache: maven
+
+          - name: Build with Maven
+            run: mvn package
+            env:
+              DB_PASSWORD: raditz
+              DB_USERNAME: kakarott
+              DB_URL: jdbc:postgresql://localhost:5432/DBZ
+              S3_INVOICE_BUCKET: example
+              S3_INVOICE_FOLDER: folder/
+
+          - name: List files
+            run : ls target
+
+          - name: Archive jar file in order to build it later
+            uses: actions/upload-artifact@v4
+            with:
+              name: jar_file
+              path: apps/invoiceAPI/target/InvoiceService-0.0.1-SNAPSHOT.jar 
+              retention-days: 1
+            
+    build_docker_image:
+      needs: test
+      runs-on: ubuntu-latest
+      defaults:
+        run:
+          working-directory: apps/invoiceAPI
+      permissions:
+        id-token: write
+        contents: read
+      env:
+        REGISTRY_LOCATION: ${{ vars.AWS_REGION}}
+        REGISTRY_PROJECT: ${{ vars.AWS_PROJECT_ID}}
+        REGISTRY_NAME: ${{ vars.TF_VAR_INVOICEAPI_IMAGE_REGISTRY }}
+      steps:
+  
+        - name: Checkout code
+          uses: actions/checkout@v4
+
+        - name: Download artifacts
+          uses: actions/download-artifact@v4
+          with:
+            path: apps/invoiceAPI/
+
+        - name: List files
+          run : ls
+        
+
+        - name: Configure AWS credentials
+          uses: aws-actions/configure-aws-credentials@v4
+          with:
+            aws-region: ${{ vars.AWS_REGION}}
+            aws-access-key-id: ${{secrets.AWS_SECRET_KEY_ID}}
+            aws-secret-access-key: ${{secrets.AWS_SECRET_KEY}}
+  
+        - name: Export full image name # with repository 
+          run: echo "IMAGE_NAME=$REGISTRY_PROJECT.dkr.ecr.$REGISTRY_LOCATION.amazonaws.com/$REGISTRY_NAME:${{ github.sha }}" >> $GITHUB_ENV
+            
+        - name: Print image name # to debug 
+          run: echo $IMAGE_NAME
+  
+        - run: aws ecr get-login-password --region $REGISTRY_LOCATION | docker login --username AWS --password-stdin $REGISTRY_PROJECT.dkr.ecr.$REGISTRY_LOCATION.amazonaws.com/$REGISTRY_NAME
+  
+        
+        - name: Build docker image
+          run: |
+            docker build -t $IMAGE_NAME . 
+  
+        - name: Push Docker image to Artifact Registry
+          run: |
+            docker push $IMAGE_NAME
+  
+        - name: Update Repository variable
+          run: gh variable set TF_VAR_invoiceAPI_image_tag --body ${{ github.sha }} -r ${{ github.repository }}
+          env:
+            GH_TOKEN: ${{ secrets.GH_PAT_WRITE_VARIABLES }}
