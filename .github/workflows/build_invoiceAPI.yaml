@@ -58,7 +58,7 @@ jobs:
             uses: actions/upload-artifact@v4
             with:
               name: invoiceAPI-${{ github.sha }}
-              path: target/InvoiceService-0.0.1-SNAPSHOT.jar 
+              path: apps/invoiceAPI/target/InvoiceService-0.0.1-SNAPSHOT.jar 
               retention-days: 1
             
     build_docker_image:
