@@ -1,3 +1,9 @@
+
+variable "alerting_email" {
+  type        = string
+  description = "email to receive alerts"
+}
+
 variable "analyzeDocument_image_registry" {
   type        = string
   description = "Name of the container registry name"
@@ -8,7 +14,12 @@ variable "analyzeDocument_image_tag" {
   description = "Name of the image tag "
 }
 
-variable "alerting_email" {
+variable "loadAnalyzedDocument_image_registry" {
   type        = string
-  description = "email to receive alerts"
+  description = "Name of the container registry name"
+}
+
+variable "loadAnalyzedDocument_image_tag" {
+  type        = string
+  description = "Name of the image tag "
 }

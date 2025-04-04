@@ -1,11 +1,3 @@
-
-resource "aws_lambda_function_url" "analyzeDocument_url" {
-  function_name = aws_lambda_function.analyzeDocument.function_name
-
-  authorization_type = "NONE"
-}
-
-
 resource "aws_lambda_function" "analyzeDocument" {
   function_name = "analyzeDocument_lambda"
   role          = aws_iam_role.iam_for_lambda.arn
