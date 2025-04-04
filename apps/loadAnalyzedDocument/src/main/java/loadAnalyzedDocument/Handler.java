@@ -28,11 +28,17 @@ public class Handler implements RequestHandler<Object, String>{
     @Override
     public String handleRequest(Object event, Context context)
     {
-      this.logger = LoggerFactory.getLogger(Handler.class) ; 
-      logger.info("Example log from {}", event.getClass());
-  
-      logger.error("Fake error sorry i just pressed the wrong button");
-  
+      System.out.println("Handling request ");
+      try {
+        this.logger = LoggerFactory.getLogger(Handler.class) ; 
+        logger.info("Example log from {}", event.getClass());
+    
+        logger.error("Fake error sorry i just pressed the wrong button");
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+
+      
       return "Dzien dobry";
     }
   }
