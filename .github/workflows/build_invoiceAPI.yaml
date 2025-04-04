@@ -81,6 +81,8 @@ jobs:
 
         - name: Download artifacts
           uses: actions/download-artifact@v4
+          with:
+            path: apps/invoiceAPI
 
         - name: List files
           run : ls
