@@ -5,13 +5,14 @@ resource "aws_lambda_function_url" "analyzeDocument_url" {
   authorization_type = "NONE"
 }
 
+
 resource "aws_lambda_function" "analyzeDocument" {
   function_name = "analyzeDocument_lambda"
   role          = aws_iam_role.iam_for_lambda.arn
   package_type  = "Image"
   image_uri     = data.aws_ecr_image.analyzeDocument_image.image_uri
   timeout       = 30
-  memory_size = 512
+  memory_size   = 512
 
   logging_config {
     log_format            = "JSON"
