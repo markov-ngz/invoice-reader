@@ -10,7 +10,7 @@ jobs:
         runs-on: ubuntu-latest
         defaults:
             run:
-              working-directory: apps/InvoiceAPI   
+              working-directory: apps/invoiceAPI   
         steps: 
           - uses: actions/checkout@v4
 
@@ -47,7 +47,7 @@ jobs:
             cache: maven
 
         - name: Build with Maven
-          working-directory: apps/InvoiceAPI
+          working-directory: apps/invoiceAPI
           run: mvn package
 
         - name: Configure AWS credentials
@@ -67,7 +67,7 @@ jobs:
   
         
         - name: Build docker image
-          working-directory: apps/InvoiceAPI
+          working-directory: apps/invoiceAPI
           run: |
             docker build -t $IMAGE_NAME . 
   
