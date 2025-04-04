@@ -2,6 +2,7 @@ package com.invoiceReader.InvoiceService.services;
 
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -12,10 +13,11 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 @Service
 public class FileService {
     
+    @Value("${s3.invoice.bucket}")
+    private String bucket; 
 
-    private final String bucket = "invoice-reader-bucket"; 
-
-    private final String defaultPath = "invoices/" ; 
+    @Value("${s3.invoice.folder}")
+    private String defaultPath ; 
 
     private static final Region DEFAULT_REGION = Region.EU_WEST_3;
 

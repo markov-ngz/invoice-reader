@@ -55,15 +55,21 @@ public class InvoiceController {
         return ResponseEntity.status(HttpStatusCode.valueOf(201)).body(invoiceCreated) ; 
     }
 
-    @PostMapping(path="/file", consumes={MediaType.MULTIPART_FORM_DATA_VALUE})
-    public ResponseEntity<String> uploadInvoice(@RequestParam("file") MultipartFile file){
+    @PostMapping(path="/create_from_file", consumes={MediaType.MULTIPART_FORM_DATA_VALUE})
+    public ResponseEntity<String> createInvoiceFromFile(@RequestParam("file") MultipartFile file){
 
         Map<String,String> metadata = new HashMap<String,String>() ; 
 
-        metadata.put("x-amz-meta-userid","142") ; 
+        metadata.put("x-amz-meta-invoiceid","142") ; 
         
         try {
+            
+            Invoice invoiceCreated = this.invoiceService.createInvoice(new Invoice()) ; 
+            
+            metadata.put("x-amz-meta-invoiceid", String.valueOf(invoiceCreated.getId())) ; 
+
             fileService.uploadFile(file.getBytes(), file.getOriginalFilename(), file.getContentType(), metadata);
+            
             return ResponseEntity.status(HttpStatusCode.valueOf(201)).body(file.getOriginalFilename()) ;
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatusCode.valueOf(500)).body(file.getOriginalFilename()) ;
