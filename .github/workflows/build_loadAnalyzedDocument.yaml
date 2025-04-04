@@ -6,7 +6,7 @@ on:
 
 jobs:
     test:
-        if: ${{ github.head_ref == 'loadAnalyzedDocumentA' }}
+        if: ${{ github.head_ref == 'loadAnalyzedDocument' }}
         runs-on: ubuntu-latest
         defaults:
             run:
