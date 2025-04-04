@@ -57,7 +57,7 @@ jobs:
           - name: Archive jar file in order to build it later
             uses: actions/upload-artifact@v4
             with:
-              name: invoiceAPI-${{ github.sha }}
+              name: jar_file
               path: apps/invoiceAPI/target/InvoiceService-0.0.1-SNAPSHOT.jar 
               retention-days: 1
             
@@ -82,36 +82,37 @@ jobs:
         - name: Download artifacts
           uses: actions/download-artifact@v4
           with:
-            path: apps/invoiceAPI
-
+            path: apps/invoiceAPI/
+            
         - name: List files
           run : ls
+        
 
-        - name: Configure AWS credentials
-          uses: aws-actions/configure-aws-credentials@v4
-          with:
-            aws-region: ${{ vars.AWS_REGION}}
-            aws-access-key-id: ${{secrets.AWS_SECRET_KEY_ID}}
-            aws-secret-access-key: ${{secrets.AWS_SECRET_KEY}}
+        # - name: Configure AWS credentials
+        #   uses: aws-actions/configure-aws-credentials@v4
+        #   with:
+        #     aws-region: ${{ vars.AWS_REGION}}
+        #     aws-access-key-id: ${{secrets.AWS_SECRET_KEY_ID}}
+        #     aws-secret-access-key: ${{secrets.AWS_SECRET_KEY}}
   
-        - name: Export full image name # with repository 
-          run: echo "IMAGE_NAME=$REGISTRY_PROJECT.dkr.ecr.$REGISTRY_LOCATION.amazonaws.com/$REGISTRY_NAME:${{ github.sha }}" >> $GITHUB_ENV
+        # - name: Export full image name # with repository 
+        #   run: echo "IMAGE_NAME=$REGISTRY_PROJECT.dkr.ecr.$REGISTRY_LOCATION.amazonaws.com/$REGISTRY_NAME:${{ github.sha }}" >> $GITHUB_ENV
             
-        - name: Print image name # to debug 
-          run: echo $IMAGE_NAME
+        # - name: Print image name # to debug 
+        #   run: echo $IMAGE_NAME
   
-        - run: aws ecr get-login-password --region $REGISTRY_LOCATION | docker login --username AWS --password-stdin $REGISTRY_PROJECT.dkr.ecr.$REGISTRY_LOCATION.amazonaws.com/$REGISTRY_NAME
+        # - run: aws ecr get-login-password --region $REGISTRY_LOCATION | docker login --username AWS --password-stdin $REGISTRY_PROJECT.dkr.ecr.$REGISTRY_LOCATION.amazonaws.com/$REGISTRY_NAME
   
         
-        - name: Build docker image
-          run: |
-            docker build -t $IMAGE_NAME . 
+        # - name: Build docker image
+        #   run: |
+        #     docker build -t $IMAGE_NAME . 
   
-        - name: Push Docker image to Artifact Registry
-          run: |
-            docker push $IMAGE_NAME
+        # - name: Push Docker image to Artifact Registry
+        #   run: |
+        #     docker push $IMAGE_NAME
   
-        - name: Update Repository variable
-          run: gh variable set TF_VAR_invoiceAPI_image_tag --body ${{ github.sha }} -r ${{ github.repository }}
-          env:
-            GH_TOKEN: ${{ secrets.GH_PAT_WRITE_VARIABLES }}
+        # - name: Update Repository variable
+        #   run: gh variable set TF_VAR_invoiceAPI_image_tag --body ${{ github.sha }} -r ${{ github.repository }}
+        #   env:
+        #     GH_TOKEN: ${{ secrets.GH_PAT_WRITE_VARIABLES }}
