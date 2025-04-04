@@ -54,7 +54,7 @@ jobs:
 
           - name: Create GitHub Release
             run: |
-              gh release create "target/InvoiceService-0.0.1-SNAPSHOT.jar --title "Release jar file of invoiceAPI" --notes "Automated release of invoiceAPI"
+              gh release create "invoiceAPI:${{ github.sha }}" target/InvoiceService-0.0.1-SNAPSHOT.jar --title "Release jar file of invoiceAPI" --notes "Automated release of invoiceAPI for commit ${{ github.sha }}"
             shell: bash
             env:
               GH_TOKEN: ${{ github.token }}
