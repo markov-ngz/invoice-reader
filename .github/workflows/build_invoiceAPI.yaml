@@ -1,0 +1,81 @@
+name: Build Invoice API
+
+on:
+  pull_request:
+    branches: main
+
+jobs:
+    test:
+        if: ${{ github.head_ref == 'OCRService' }}
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+              working-directory: apps/InvoiceAPI   
+        steps: 
+          - uses: actions/checkout@v4
+
+          - name: Set up JDK 21
+            uses: actions/setup-java@v4
+            with:
+              java-version: '21'
+              distribution: 'temurin'
+              cache: maven
+
+          - name: Build with Maven
+            run: mvn package
+
+    build_docker_image:
+      needs: test
+      runs-on: ubuntu-latest
+      permissions:
+        id-token: write
+        contents: read
+      env:
+        REGISTRY_LOCATION: ${{ vars.AWS_REGION}}
+        REGISTRY_PROJECT: ${{ vars.AWS_PROJECT_ID}}
+        REGISTRY_NAME: ${{ vars.TF_VAR_INVOICEAPI_IMAGE_REGISTRY }}
+      steps:
+  
+        - name: Checkout code
+          uses: actions/checkout@v4
+
+        - name: Set up JDK 21
+          uses: actions/setup-java@v4
+          with:
+            java-version: '21'
+            distribution: 'temurin'
+            cache: maven
+
+        - name: Build with Maven
+          working-directory: apps/InvoiceAPI
+          run: mvn package
+
+        - name: Configure AWS credentials
+          uses: aws-actions/configure-aws-credentials@v4
+          with:
+            aws-region: ${{ vars.AWS_REGION}}
+            aws-access-key-id: ${{secrets.AWS_SECRET_KEY_ID}}
+            aws-secret-access-key: ${{secrets.AWS_SECRET_KEY}}
+  
+        - name: Export full image name # with repository 
+          run: echo "IMAGE_NAME=$REGISTRY_PROJECT.dkr.ecr.$REGISTRY_LOCATION.amazonaws.com/$REGISTRY_NAME:${{ github.sha }}" >> $GITHUB_ENV
+            
+        - name: Print image name # to debug 
+          run: echo $IMAGE_NAME
+  
+        - run: aws ecr get-login-password --region $REGISTRY_LOCATION | docker login --username AWS --password-stdin $REGISTRY_PROJECT.dkr.ecr.$REGISTRY_LOCATION.amazonaws.com/$REGISTRY_NAME
+  
+        
+        - name: Build docker image
+          working-directory: apps/InvoiceAPI
+          run: |
+            docker build -t $IMAGE_NAME . 
+  
+        - name: Push Docker image to Artifact Registry
+          run: |
+            docker push $IMAGE_NAME
+  
+        - name: Update Repository variable
+          run: gh variable set TF_VAR_invoiceAPI_image_tag --body ${{ github.sha }} -r ${{ github.repository }}
+          env:
+            GH_TOKEN: ${{ secrets.GH_PAT_WRITE_VARIABLES }}
