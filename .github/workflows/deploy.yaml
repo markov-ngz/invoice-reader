@@ -47,6 +47,8 @@ jobs:
               TF_VAR_analyzeDocument_image_tag: ${{ vars.TF_VAR_ANALYZEDOCUMENT_IMAGE_TAG }}
               TF_VAR_loadAnalyzedDocument_image_registry: ${{ vars.TF_VAR_LOADANALYZEDDOCUMENT_IMAGE_REGISTRY }}
               TF_VAR_loadAnalyzedDocument_image: ${{ vars.TF_VAR_LOADANALYZEDDOCUMENT_IMAGE_TAG }}
+              TF_VAR_invoiceAPI_image_registry: ${{ vars.TF_VAR_INVOICEAPI_IMAGE_REGISTRY }}
+              TF_VAR_invoiceAPI_image: ${{ vars.TF_VAR_INVOICEAPI_IMAGE_TAG }}
               
             id: apply
             run: terraform apply -auto-approve

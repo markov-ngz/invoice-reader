@@ -23,3 +23,14 @@ variable "loadAnalyzedDocument_image_tag" {
   type        = string
   description = "Name of the image tag "
 }
+
+
+variable "invoiceAPI_image_registry" {
+  type        = string
+  description = "Name of the container registry name"
+}
+
+variable "invoiceAPI_image_tag" {
+  type        = string
+  description = "Name of the image tag "
+}
