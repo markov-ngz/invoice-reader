@@ -2,6 +2,7 @@ package analyzeDocument;
 
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -136,7 +137,10 @@ public class Handler implements RequestHandler<SQSEvent, String> {
                 // 3. Extract Invoice Information
                 MistralAnalyzeDocumentResponse mistralAnalyzeDocumentResponse = mistralDocumentUnderstanding(fileBytes, s3.getObject().getKey());
 
-                List<InvoiceDTO> invoiceDTOs = mistralAnalyzeDocumentResponse.getChoices().stream().map( m -> parseInvoiceFromMistralChoice(m)).collect(Collectors.toList()) ; 
+                if(mistralAnalyzeDocumentResponse.getChoices().size() < 1 ){
+                    throw new NoSuchElementException("Invoice could not be parsed successfully") ; 
+                }
+                InvoiceDTO invoiceDTOs =  parseInvoiceFromMistralChoice(mistralAnalyzeDocumentResponse.getChoices().getFirst()) ; 
 
                 logger.log(String.format("Succesfully extracted information for %s invoice", invoiceDTOs), LogLevel.INFO) ; 
 

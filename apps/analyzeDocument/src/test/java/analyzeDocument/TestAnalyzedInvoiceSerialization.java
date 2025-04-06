@@ -3,8 +3,6 @@ package analyzeDocument;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import java.util.ArrayList;
-import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -28,10 +26,7 @@ public class TestAnalyzedInvoiceSerialization {
         invoiceDTO.setInvoiceNumber("#46548");
         invoiceDTO.setInvoiceDate(null);
 
-        List<InvoiceDTO> invoiceDTOs = new ArrayList<InvoiceDTO>() ; 
-        invoiceDTOs.add(invoiceDTO) ; 
-
-        AnalyzedInvoiceDTO analyzedInvoiceDTO = new AnalyzedInvoiceDTO("bucket", "objectKey", "null", 0, invoiceDTOs) ; 
+        AnalyzedInvoiceDTO analyzedInvoiceDTO = new AnalyzedInvoiceDTO("bucket", "objectKey", "null", 0, invoiceDTO) ; 
 
         ObjectMapper objectMapper = new ObjectMapper() ; 
 
