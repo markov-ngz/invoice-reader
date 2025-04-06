@@ -31,7 +31,7 @@ public class Invoice {
 
 
     @OneToMany
-    private List<InvoiceLine> items;
+    private List<InvoiceLine> invoiceLines;
     
     private double totalAmount;
 }
