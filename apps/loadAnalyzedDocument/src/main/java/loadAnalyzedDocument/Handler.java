@@ -1,14 +1,15 @@
 package loadAnalyzedDocument;
 
-import software.amazon.awssdk.regions.Region;
+
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
-import com.amazonaws.services.lambda.runtime.logging.LogLevel;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper ; 
 
 import loadAnalyzedDocument.dtos.AnalyzedInvoiceDTO;
+import loadAnalyzedDocument.dtos.InvoiceDTO;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -16,31 +17,76 @@ import java.sql.SQLException;
 
 
 import org.slf4j.LoggerFactory;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpException;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.slf4j.Logger;
 
-import com.amazonaws.lambda.thirdparty.com.fasterxml.jackson.databind.ObjectMapper;
 
-public class Handler implements RequestHandler<Object, String>{
+public class Handler implements RequestHandler<SQSEvent, String>{
 
 
     private Logger logger ;
+
+    private ObjectMapper objectMapper ;  
+
+    private final String uri = "" ; 
   
     @Override
-    public String handleRequest(Object event, Context context)
+    public String handleRequest(SQSEvent event, Context context)
     {
-      System.out.println("Handling request ");
-      try {
-        this.logger = LoggerFactory.getLogger(Handler.class) ; 
-        logger.info("Example log from {}", event.getClass());
-    
-        logger.error("Fake error sorry i just pressed the wrong button");
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
+      this.logger = LoggerFactory.getLogger(Handler.class) ; 
+      logger.info("Starting");
+      for(SQSMessage message :  event.getRecords()){
+        try {
+          // extract response
+          AnalyzedInvoiceDTO analyzedInvoiceDTO = objectMapper.readValue(message.getBody(), AnalyzedInvoiceDTO.class) ; 
 
-      
+          logger.info("Successfully parsed payload for message {}", message.getMessageId());
+
+          for(InvoiceDTO invoiceDTO : analyzedInvoiceDTO.getInvoiceDTOs()){
+            
+            // serialize 
+            String payload = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(invoiceDTO) ; 
+
+            // send request 
+            HttpPost httpPost = new   HttpPost(uri) ; 
+            
+            StringEntity entity = new StringEntity(payload, ContentType.APPLICATION_JSON) ; 
+
+            httpPost.setEntity(entity);
+
+            try(CloseableHttpClient httpClient = HttpClients.createDefault()){
+                return  httpClient.execute(httpPost, response -> {
+                    if(response.getCode() >= 400 ){
+                      throw new HttpException(String.format("Invalid status code received %s",response.getCode())) ; 
+                    }else{
+                      return null ;
+                    }
+              });
+            }
+          }
+    
+        } catch (JsonMappingException e ) {
+            e.printStackTrace();
+            logger.error("Failed to parse message body", e);
+            continue ;          
+        } catch (Exception e) {
+          e.printStackTrace();
+          logger.error("Unexpected error occurred", e);
+          continue ; 
+        }          
+      } 
+
+
       return "Dzien dobry";
     }
+
   }
   
 
