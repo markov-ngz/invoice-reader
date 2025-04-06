@@ -1,7 +1,5 @@
 package loadAnalyzedDocument.dtos;
 
-import java.util.List;
-
 import lombok.Data;
 
 @Data
@@ -14,16 +12,16 @@ public class AnalyzedInvoiceDTO {
     
     private int invoiceId ;
     
-    private List<InvoiceDTO> invoiceDTOs ; 
+    private InvoiceDTO invoiceDTO ; 
 
-    public AnalyzedInvoiceDTO(String bucketName, String objectKey, String objectUrl , int invoiceId , List<InvoiceDTO> invoiceDTOs ){
+    public AnalyzedInvoiceDTO(String bucketName, String objectKey, String objectUrl , int invoiceId , InvoiceDTO invoiceDTOs ){
         
         this.bucketName = bucketName ; 
         this.objectKey = objectKey ; 
         this.objectUrl = objectUrl ;
         this.invoiceId = invoiceId ;
         
-        this.invoiceDTOs = invoiceDTOs ; 
+        this.invoiceDTO = invoiceDTOs ; 
 
     }
 
