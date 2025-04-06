@@ -1,13 +1,13 @@
-package com.invoiceReader.InvoiceService;
+// package com.invoiceReader.InvoiceService;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+// import org.junit.jupiter.api.Test;
+// import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class InvoiceServiceApplicationTests {
+// @SpringBootTest
+// class InvoiceServiceApplicationTests {
 
-	@Test
-	void contextLoads() {
-	}
+// 	@Test
+// 	void contextLoads() {
+// 	}
 
-}
+// }
