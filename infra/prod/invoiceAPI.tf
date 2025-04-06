@@ -26,14 +26,25 @@ locals {
     // =>  public ip pending the private ip association with vpc & firewall rules 
   }
 }
+
 data "aws_iam_role" "apprunner" {
-  name = "AWSServiceRoleForAppRunner"
+  name = "invoiceApiAppRunner"
+}
+
+
+data "aws_iam_role" "apprunner_ECR" {
+  name = "AppRunnerECRAccessRole"
 }
 
 resource "aws_apprunner_service" "invoiceAPI" {
   service_name = "invoiceAPI"
 
   source_configuration {
+
+    authentication_configuration {
+      access_role_arn = data.aws_iam_role.apprunner_ECR.arn
+    }
+
     image_repository {
       image_configuration {
         port = "8000"
