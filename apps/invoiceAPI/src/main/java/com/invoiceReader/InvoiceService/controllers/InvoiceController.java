@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -20,7 +21,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.invoiceReader.InvoiceService.services.FileService;
 import com.invoiceReader.InvoiceService.services.InvoiceService;
+import com.invoiceReader.InvoiceService.dtos.InvoiceDTO;
+import com.invoiceReader.InvoiceService.dtos.InvoiceCreateDTO;
 import com.invoiceReader.InvoiceService.entities.Invoice;
+
 
 @RestController
 @RequestMapping("/invoices")
@@ -35,56 +39,65 @@ public class InvoiceController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Invoice>> getAllInvoices(){
-        List<Invoice> invoices = this.invoiceService.getAllInvoices() ; 
-        return ResponseEntity.ok(invoices) ; 
+    public ResponseEntity<List<InvoiceDTO>> getAllInvoices() {
+        List<InvoiceDTO> invoices = invoiceService.findAllInvoices();
+        return ResponseEntity.ok(invoices);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Invoice> getInvoiceById(@PathVariable int id){
-        Invoice invoice = this.invoiceService.getInvoiceById(id) ; 
-        if(invoice == null){
-            return  ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(invoice) ; 
+    public ResponseEntity<InvoiceDTO> getInvoiceById(@PathVariable int id) {
+        InvoiceDTO invoice = invoiceService.findInvoiceById(id);
+        return ResponseEntity.ok(invoice);
     }
 
     @PostMapping
-    public ResponseEntity<Invoice> createInvoice(@RequestBody Invoice invoice){
-        Invoice invoiceCreated = this.invoiceService.createInvoice(invoice) ; 
-        return ResponseEntity.status(HttpStatusCode.valueOf(201)).body(invoiceCreated) ; 
+    public ResponseEntity<InvoiceDTO> createInvoice(@RequestBody InvoiceCreateDTO invoiceCreateDTO) {
+        InvoiceDTO createdInvoice = invoiceService.createInvoice(invoiceCreateDTO);
+        return new ResponseEntity<>(createdInvoice, HttpStatus.CREATED);
     }
 
-    @PostMapping(path="/create_from_file", consumes={MediaType.MULTIPART_FORM_DATA_VALUE})
-    public ResponseEntity<String> createInvoiceFromFile(@RequestParam("file") MultipartFile file){
+    @PutMapping("/{id}")
+    public ResponseEntity<InvoiceDTO> updateInvoice(@PathVariable int id, @RequestBody InvoiceDTO invoiceDTO) {
+        invoiceDTO.setId(id); // Ensure ID in path matches the one in DTO
+        InvoiceDTO updatedInvoice = invoiceService.updateInvoice(invoiceDTO);
+        return ResponseEntity.ok(updatedInvoice);
+    }
 
-        Map<String,String> metadata = new HashMap<String,String>() ; 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteInvoice(@PathVariable int id) {
+        invoiceService.deleteInvoice(id);
+        return ResponseEntity.noContent().build();
+    }
 
-        metadata.put("x-amz-meta-invoiceid","142") ; 
+    // @PostMapping(path="/create_from_file", consumes={MediaType.MULTIPART_FORM_DATA_VALUE})
+    // public ResponseEntity<String> createInvoiceFromFile(@RequestParam("file") MultipartFile file){
+
+    //     Map<String,String> metadata = new HashMap<String,String>() ; 
+
+    //     metadata.put("x-amz-meta-invoiceid","142") ; 
         
-        try {
+    //     try {
             
-            Invoice invoiceCreated = this.invoiceService.createInvoice(new Invoice()) ; 
+    //         InvoiceDTO invoiceCreated = this.invoiceService.createInvoice(new InvoiceCreateDTO()) ; 
             
-            metadata.put("x-amz-meta-invoiceid", String.valueOf(invoiceCreated.getId())) ; 
+    //         metadata.put("x-amz-meta-invoiceid", String.valueOf(invoiceCreated.getId())) ; 
 
-            fileService.uploadFile(file.getBytes(), file.getOriginalFilename(), file.getContentType(), metadata);
+    //         fileService.uploadFile(file.getBytes(), file.getOriginalFilename(), file.getContentType(), metadata);
             
-            return ResponseEntity.status(HttpStatusCode.valueOf(201)).body(file.getOriginalFilename()) ;
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatusCode.valueOf(500)).body(file.getOriginalFilename()) ;
-        }
-    }
+    //         return ResponseEntity.status(HttpStatusCode.valueOf(201)).body(file.getOriginalFilename()) ;
+    //     } catch (Exception e) {
+    //         return ResponseEntity.status(HttpStatusCode.valueOf(500)).body(file.getOriginalFilename()) ;
+    //     }
+    // }
 
-    @PutMapping
-    public ResponseEntity<Invoice> updateInvoice(@RequestBody Invoice invoice){
-        Invoice invoiceUpdated = this.invoiceService.updateInvoice(invoice) ;
-        return ResponseEntity.ok(invoiceUpdated) ; 
-    }
 
-    @GetMapping("/delete/{id}")
-    public ResponseEntity<?> deleteInvoice(@PathVariable int id ){
-        this.invoiceService.deleteInvoiceById(id);
-        return new ResponseEntity<>(null, HttpStatus.OK) ; 
-    } 
+    // @GetMapping("/search")
+    // public ResponseEntity<List<InvoiceDTO>> searchInvoices(
+    //         @RequestParam(required = false) String invoiceNumber,
+    //         @RequestParam(required = false) String supplier) {
+    //     List<InvoiceDTO> invoices = invoiceService.searchInvoices(invoiceNumber, supplier);
+    //     return ResponseEntity.ok(invoices);
+    // }
+
+
 }

@@ -4,6 +4,11 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinColumn;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.Data;
 
 @Entity
@@ -18,5 +23,18 @@ public class InvoiceLine {
     private double unitPrice;
     private String tax  ;
     private double amount ; 
+    @ManyToOne
+    @JoinColumn(name="invoice_id")
+    private Invoice invoice ; 
+
+
+    @JsonIgnore
+    public Invoice getInvoice() {
+        return invoice;
+    }
+    
+    public int getInvoiceId() {
+        return invoice != null ? invoice.getId() : null;
+    }
 
 }
