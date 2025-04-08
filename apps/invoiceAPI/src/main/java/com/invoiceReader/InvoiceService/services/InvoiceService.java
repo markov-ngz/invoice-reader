@@ -11,7 +11,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.invoiceReader.InvoiceService.repositories.InvoiceRepository;
 
+import com.invoiceReader.InvoiceService.services.InvoiceLineService;
+
 import com.invoiceReader.InvoiceService.dtos.InvoiceDTO;
+import com.invoiceReader.InvoiceService.dtos.InvoiceLineCreateDTO;
 import com.invoiceReader.InvoiceService.dtos.InvoiceLineDTO;
 
 import com.invoiceReader.InvoiceService.dtos.InvoiceCreateDTO;
@@ -22,9 +25,11 @@ import com.invoiceReader.InvoiceService.exceptions.ResourceNotFoundException;
 @Service
 public class InvoiceService {
     private final InvoiceRepository invoiceRepository;
+    private final InvoiceLineService invoiceLineService ; 
 
-    public InvoiceService(InvoiceRepository invoiceRepository) {
+    public InvoiceService(InvoiceRepository invoiceRepository, InvoiceLineService invoiceLineService) {
         this.invoiceRepository = invoiceRepository;
+        this.invoiceLineService = invoiceLineService;
     }
 
     public List<InvoiceDTO> findAllInvoices() {
@@ -45,7 +50,10 @@ public class InvoiceService {
 
         Invoice invoice = convertToEntity(invoiceCreateDTO);
         Invoice savedInvoice = invoiceRepository.save(invoice);
-        return convertToDTO(savedInvoice);
+        List<InvoiceLineDTO> savedInvoiceLinesDTO = invoiceLineService.createInvoiceLines(invoiceCreateDTO.getInvoiceLines(), savedInvoice) ; 
+        InvoiceDTO invoiceDTO = convertToDTO(savedInvoice) ; 
+        invoiceDTO.setInvoiceLines(savedInvoiceLinesDTO);
+        return invoiceDTO ; 
     }
 
     @Transactional
@@ -84,7 +92,7 @@ public class InvoiceService {
         // // Convert invoice lines
         // if (invoice.getInvoiceLines() != null) {
         //     List<InvoiceLineDTO> linesDTOs = invoice.getInvoiceLines().stream()
-        //             .map(this::convertToLineDTO)
+        //             .map( l -> invoiceLineService.convertToDTO(l))
         //             .collect(Collectors.toList());
         //     dto.setInvoiceLines(linesDTOs);
         // } else {
@@ -105,18 +113,18 @@ public class InvoiceService {
         entity.setCustomerAdress(dto.getCustomerAdress());
         entity.setTotalAmount(dto.getTotalAmount());
         
-        // // Convert invoice lines
-        // if (dto.getInvoiceLines() != null) {
-        //     Set<InvoiceLine> lines = new HashSet<>();
-        //     for (InvoiceLineDTO lineDTO : dto.getInvoiceLines()) {
-        //         InvoiceLine line = convertToLineEntity(lineDTO);
-        //         line.setInvoice(entity); // Establish bidirectional relationship
-        //         lines.add(line);
-        //     }
-        //     entity.setInvoiceLines(lines);
-        // } else {
-        //     entity.setInvoiceLines(new HashSet<>());
-        // }
+        // Convert invoice lines
+        if (dto.getInvoiceLines() != null) {
+            Set<InvoiceLine> lines = new HashSet<>();
+            for (InvoiceLineDTO lineDTO : dto.getInvoiceLines()) {
+                InvoiceLine line = invoiceLineService.convertToEntity(lineDTO); 
+                line.setInvoice(entity); // Establish bidirectional relationship
+                lines.add(line);
+            }
+            entity.setInvoiceLines(lines);
+        } else {
+            entity.setInvoiceLines(new HashSet<>());
+        }
         
         return entity;
     }
@@ -133,19 +141,17 @@ public class InvoiceService {
         
         // // Convert invoice lines
         // if (dto.getInvoiceLines() != null) {
-        //     Set<InvoiceLine> lines = new HashSet<>();
-        //     for (InvoiceLineDTO lineDTO : dto.getInvoiceLines()) {
-        //         InvoiceLine line = convertToLineEntity(lineDTO);
-        //         line.setInvoice(entity); // Establish bidirectional relationship
-        //         lines.add(line);
+        //     for (InvoiceLineCreateDTO lineDTO : dto.getInvoiceLines()) {
+        //         InvoiceLine line = invoiceLineService.convertToEntity(lineDTO);
+        //         entity.addInvoiceLine(line);
         //     }
-        //     entity.setInvoiceLines(lines);
         // } else {
         //     entity.setInvoiceLines(new HashSet<>());
         // }
         
         return entity;
     }
+
     // public List<InvoiceDTO> searchInvoices(String invoiceNumber, String supplier) {
     //     List<Invoice> invoices;
         

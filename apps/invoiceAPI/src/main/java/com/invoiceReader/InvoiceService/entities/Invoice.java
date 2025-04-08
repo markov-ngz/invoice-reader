@@ -1,6 +1,7 @@
 package com.invoiceReader.InvoiceService.entities ; 
 
 import java.sql.Date;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -32,9 +33,14 @@ public class Invoice {
     private String customerAdress;
 
 
-    // @OneToMany(mappedBy = "invoice", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    // private Set<InvoiceLine> invoiceLines ;
+    @OneToMany(mappedBy = "invoice", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<InvoiceLine> invoiceLines = new HashSet<>(); ;
     
     
     private double totalAmount;
+
+    public void addInvoiceLine(InvoiceLine line) {
+        line.setInvoice(this);
+        this.invoiceLines.add(line);
+    }
 }

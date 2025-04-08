@@ -23,18 +23,18 @@ public class InvoiceLine {
     private double unitPrice;
     private String tax  ;
     private double amount ; 
-    // @ManyToOne
-    // @JoinColumn(name="invoice_id")
-    // private Invoice invoice ; 
+    @ManyToOne
+    @JoinColumn(name="invoice_id")
+    private Invoice invoice ; 
 
 
-    // @JsonIgnore
-    // public Invoice getInvoice() {
-    //     return invoice;
-    // }
+    @JsonIgnore
+    public Invoice getInvoice() {
+        return invoice;
+    }
     
-    // public int getInvoiceId() {
-    //     return invoice != null ? invoice.getId() : null;
-    // }
+    public int getInvoiceId() {
+        return invoice != null ? invoice.getId() : null;
+    }
 
 }

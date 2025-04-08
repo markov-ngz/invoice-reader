@@ -43,15 +43,22 @@ public class InvoiceLineService {
     }
 
     @Transactional
-    public InvoiceLineDTO createInvoice(InvoiceLineCreateDTO invoiceLineCreateDTO) {
+    public InvoiceLineDTO createInvoiceLine(InvoiceLineCreateDTO invoiceLineCreateDTO, Invoice invoice) {
 
         InvoiceLine invoiceLine = convertToEntity(invoiceLineCreateDTO);
+        invoiceLine.setInvoice(invoice);
         InvoiceLine savedInvoiceLine = invoiceLineRepository.save(invoiceLine);
         return convertToDTO(savedInvoiceLine);
     }
 
     @Transactional
-    public InvoiceLineDTO updateInvoice(InvoiceLineDTO invoiceLineDTO) {
+    public List<InvoiceLineDTO> createInvoiceLines(List<InvoiceLineCreateDTO> invoiceLinesCreateDTO, Invoice invoice) {
+
+        return invoiceLinesCreateDTO.stream().map(i -> createInvoiceLine(i, invoice)).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public InvoiceLineDTO updateInvoiceLine(InvoiceLineDTO invoiceLineDTO) {
         // Check if invoiceLine exists
         invoiceLineRepository.findById(invoiceLineDTO.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Invoice Line not found with id: " + invoiceLineDTO.getId()));
@@ -70,7 +77,7 @@ public class InvoiceLineService {
         invoiceLineRepository.deleteById(id);
     }
 
-    private InvoiceLineDTO convertToDTO(InvoiceLine line){
+    public InvoiceLineDTO convertToDTO(InvoiceLine line){
         InvoiceLineDTO lineDTO = new InvoiceLineDTO() ; 
         lineDTO.setId(line.getId());
         lineDTO.setDescription(line.getDescription());
@@ -78,10 +85,11 @@ public class InvoiceLineService {
         lineDTO.setUnitPrice(line.getUnitPrice());
         lineDTO.setTax(line.getTax());
         lineDTO.setAmount(line.getAmount());
+        lineDTO.setInvoiceId(line.getInvoice().getId());
         return lineDTO ; 
     }
 
-    private InvoiceLine convertToEntity(InvoiceLineCreateDTO lineDTO){
+    public InvoiceLine convertToEntity(InvoiceLineCreateDTO lineDTO){
 
         InvoiceLine line = new InvoiceLine();
         line.setDescription(lineDTO.getDescription());
@@ -92,7 +100,7 @@ public class InvoiceLineService {
 
         return line ; 
     }
-    private InvoiceLine convertToEntity(InvoiceLineDTO lineDTO){
+    public InvoiceLine convertToEntity(InvoiceLineDTO lineDTO){
         InvoiceLine line = new InvoiceLine();
         line.setId(lineDTO.getId());
         line.setDescription(lineDTO.getDescription());

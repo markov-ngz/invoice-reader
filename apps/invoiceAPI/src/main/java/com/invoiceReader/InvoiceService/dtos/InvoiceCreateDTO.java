@@ -18,7 +18,7 @@ public class InvoiceCreateDTO {
     private String customerName;
     private String customerAdress;
 
-    // private List<InvoiceLineCreateDTO> invoiceLines;
+    private List<InvoiceLineCreateDTO> invoiceLines;
     
     private double totalAmount;
 }
