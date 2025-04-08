@@ -57,7 +57,7 @@ jobs:
           - name: Archive jar file in order to build it later
             uses: actions/upload-artifact@v4
             with:
-              name: jar_file
+              name: target
               path: apps/invoiceAPI/target/InvoiceService-0.0.1-SNAPSHOT.jar 
               retention-days: 1
             
