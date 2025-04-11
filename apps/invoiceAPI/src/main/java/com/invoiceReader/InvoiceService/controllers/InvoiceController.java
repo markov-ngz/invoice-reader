@@ -55,6 +55,7 @@ public class InvoiceController {
         InvoiceDTO createdInvoice = invoiceService.createInvoice(invoiceCreateDTO);
         return new ResponseEntity<>(createdInvoice, HttpStatus.CREATED);
     }
+    
 
     @PutMapping("/{id}")
     public ResponseEntity<InvoiceDTO> updateInvoice(@PathVariable int id, @RequestBody InvoiceDTO invoiceDTO) {
@@ -69,35 +70,26 @@ public class InvoiceController {
         return ResponseEntity.noContent().build();
     }
 
-    // @PostMapping(path="/create_from_file", consumes={MediaType.MULTIPART_FORM_DATA_VALUE})
-    // public ResponseEntity<String> createInvoiceFromFile(@RequestParam("file") MultipartFile file){
+    @PostMapping(path="/create_from_file", consumes={MediaType.MULTIPART_FORM_DATA_VALUE})
+    public ResponseEntity<String> createInvoiceFromFile(@RequestParam("file") MultipartFile file){
 
-    //     Map<String,String> metadata = new HashMap<String,String>() ; 
+        Map<String,String> metadata = new HashMap<String,String>() ; 
 
-    //     metadata.put("x-amz-meta-invoiceid","142") ; 
+        metadata.put("x-amz-meta-invoiceid","142") ; 
         
-    //     try {
+        try {
             
-    //         InvoiceDTO invoiceCreated = this.invoiceService.createInvoice(new InvoiceCreateDTO()) ; 
+            InvoiceDTO invoiceCreated = this.invoiceService.createInvoice(new InvoiceCreateDTO()) ; 
             
-    //         metadata.put("x-amz-meta-invoiceid", String.valueOf(invoiceCreated.getId())) ; 
+            metadata.put("x-amz-meta-invoiceid", String.valueOf(invoiceCreated.getId())) ; 
 
-    //         fileService.uploadFile(file.getBytes(), file.getOriginalFilename(), file.getContentType(), metadata);
+            fileService.uploadFile(file.getBytes(), file.getOriginalFilename(), file.getContentType(), metadata);
             
-    //         return ResponseEntity.status(HttpStatusCode.valueOf(201)).body(file.getOriginalFilename()) ;
-    //     } catch (Exception e) {
-    //         return ResponseEntity.status(HttpStatusCode.valueOf(500)).body(file.getOriginalFilename()) ;
-    //     }
-    // }
-
-
-    // @GetMapping("/search")
-    // public ResponseEntity<List<InvoiceDTO>> searchInvoices(
-    //         @RequestParam(required = false) String invoiceNumber,
-    //         @RequestParam(required = false) String supplier) {
-    //     List<InvoiceDTO> invoices = invoiceService.searchInvoices(invoiceNumber, supplier);
-    //     return ResponseEntity.ok(invoices);
-    // }
-
+            return ResponseEntity.status(HttpStatusCode.valueOf(201)).body(file.getOriginalFilename()) ;
+        } catch (Exception e) {
+            System.out.println(e);
+            return ResponseEntity.status(HttpStatusCode.valueOf(500)).body(file.getOriginalFilename()) ;
+        }
+    }
 
 }
