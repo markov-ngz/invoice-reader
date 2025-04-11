@@ -11,7 +11,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Service
-public class FileService {
+public class S3Service {
     
     @Value("${s3.invoice.bucket}")
     private String bucket; 
@@ -21,7 +21,7 @@ public class FileService {
 
     private static final Region DEFAULT_REGION = Region.EU_WEST_3;
 
-    public FileService(){}
+    public S3Service(){}
 
     public void uploadFile(byte[] content , String fileName, String contentType, Map<String,String> metadata  ){
 

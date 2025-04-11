@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.invoiceReader.InvoiceService.services.FileService;
+import com.invoiceReader.InvoiceService.services.S3Service;
 import com.invoiceReader.InvoiceService.services.InvoiceService;
 import com.invoiceReader.InvoiceService.dtos.InvoiceDTO;
 import com.invoiceReader.InvoiceService.dtos.InvoiceCreateDTO;
@@ -31,9 +31,9 @@ import com.invoiceReader.InvoiceService.entities.Invoice;
 public class InvoiceController {
 
     private final InvoiceService invoiceService ; 
-    private final FileService fileService ; 
+    private final S3Service fileService ; 
 
-    public InvoiceController(InvoiceService invoiceService, FileService fileService){
+    public InvoiceController(InvoiceService invoiceService, S3Service fileService){
         this.invoiceService = invoiceService ;
         this.fileService = fileService ;  
     }
