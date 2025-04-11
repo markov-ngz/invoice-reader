@@ -42,6 +42,12 @@ public class InvoiceLineService {
         return convertToDTO(invoiceLine);
     }
 
+    public List<InvoiceLineDTO> findInvoiceLinesByInvoice(Invoice invoice) {
+        List<InvoiceLine> invoiceLines = invoiceLineRepository.findByInvoice(invoice)
+                .orElseThrow(() -> new ResourceNotFoundException("Invoice Line not found with id: " + invoice.getId()));
+        return invoiceLines.stream().map(il -> convertToDTO(il)).collect(Collectors.toList());
+    }
+
     @Transactional
     public InvoiceLineDTO createInvoiceLine(InvoiceLineCreateDTO invoiceLineCreateDTO, Invoice invoice) {
 
@@ -51,11 +57,13 @@ public class InvoiceLineService {
         return convertToDTO(savedInvoiceLine);
     }
 
+
     @Transactional
     public List<InvoiceLineDTO> createInvoiceLines(List<InvoiceLineCreateDTO> invoiceLinesCreateDTO, Invoice invoice) {
 
         return invoiceLinesCreateDTO.stream().map(i -> createInvoiceLine(i, invoice)).collect(Collectors.toList());
     }
+
 
     @Transactional
     public InvoiceLineDTO updateInvoiceLine(InvoiceLineDTO invoiceLineDTO) {

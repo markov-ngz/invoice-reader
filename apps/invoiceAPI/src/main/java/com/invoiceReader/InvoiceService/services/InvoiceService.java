@@ -41,18 +41,20 @@ public class InvoiceService {
 
     public InvoiceDTO findInvoiceById(int id) {
         Invoice invoice = invoiceRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Invoice not found with id: " + id));
-        return convertToDTO(invoice);
+        .orElseThrow(() -> new ResourceNotFoundException("Invoice not found with id: " + id));
+        return convertToDTO(invoice) ;     
+
     }
 
     @Transactional
     public InvoiceDTO createInvoice(InvoiceCreateDTO invoiceCreateDTO) {
 
         Invoice invoice = convertToEntity(invoiceCreateDTO);
+        
         Invoice savedInvoice = invoiceRepository.save(invoice);
-        List<InvoiceLineDTO> savedInvoiceLinesDTO = invoiceLineService.createInvoiceLines(invoiceCreateDTO.getInvoiceLines(), savedInvoice) ; 
+        
         InvoiceDTO invoiceDTO = convertToDTO(savedInvoice) ; 
-        invoiceDTO.setInvoiceLines(savedInvoiceLinesDTO);
+
         return invoiceDTO ; 
     }
 
@@ -89,20 +91,15 @@ public class InvoiceService {
         dto.setCustomerAdress(invoice.getCustomerAdress());
         dto.setTotalAmount(invoice.getTotalAmount());
         
-        // // Convert invoice lines
-        // if (invoice.getInvoiceLines() != null) {
-        //     List<InvoiceLineDTO> linesDTOs = invoice.getInvoiceLines().stream()
-        //             .map( l -> invoiceLineService.convertToDTO(l))
-        //             .collect(Collectors.toList());
-        //     dto.setInvoiceLines(linesDTOs);
-        // } else {
-        //     dto.setInvoiceLines(new ArrayList<>());
-        // }
+        List<InvoiceLineDTO> invoiceLineDtos = invoiceLineService.findInvoiceLinesByInvoice(invoice) ; 
+
+        dto.setInvoiceLines(invoiceLineDtos);
+        
         
         return dto;
     }
 
-    private Invoice convertToEntity(InvoiceDTO dto) {
+    public Invoice convertToEntity(InvoiceDTO dto) {
         Invoice entity = new Invoice();
         entity.setId(dto.getId());
         entity.setInvoiceNumber(dto.getInvoiceNumber());
@@ -129,7 +126,7 @@ public class InvoiceService {
         return entity;
     }
     // polymorphism
-    private Invoice convertToEntity(InvoiceCreateDTO dto) {
+    public Invoice convertToEntity(InvoiceCreateDTO dto) {
         Invoice entity = new Invoice();
         entity.setInvoiceNumber(dto.getInvoiceNumber());
         entity.setInvoiceDate(dto.getInvoiceDate());
@@ -139,37 +136,7 @@ public class InvoiceService {
         entity.setCustomerAdress(dto.getCustomerAdress());
         entity.setTotalAmount(dto.getTotalAmount());
         
-        // // Convert invoice lines
-        // if (dto.getInvoiceLines() != null) {
-        //     for (InvoiceLineCreateDTO lineDTO : dto.getInvoiceLines()) {
-        //         InvoiceLine line = invoiceLineService.convertToEntity(lineDTO);
-        //         entity.addInvoiceLine(line);
-        //     }
-        // } else {
-        //     entity.setInvoiceLines(new HashSet<>());
-        // }
-        
         return entity;
     }
 
-    // public List<InvoiceDTO> searchInvoices(String invoiceNumber, String supplier) {
-    //     List<Invoice> invoices;
-        
-    //     // Simple search implementation - in a real application, you might want to use
-    //     // Spring Data JPA Specifications or QueryDSL for more complex queries
-    //     if (invoiceNumber != null && supplier != null) {
-    //         invoices = invoiceRepository.findByInvoiceNumberContainingAndSupplierContaining(
-    //                 invoiceNumber, supplier);
-    //     } else if (invoiceNumber != null) {
-    //         invoices = invoiceRepository.findByInvoiceNumberContaining(invoiceNumber);
-    //     } else if (supplier != null) {
-    //         invoices = invoiceRepository.findBySupplierContaining(supplier);
-    //     } else {
-    //         invoices = invoiceRepository.findAll();
-    //     }
-        
-    //     return invoices.stream()
-    //             .map(invoice -> convertToDTO(invoice))
-    //             .collect(Collectors.toList());
-    // }
 }
