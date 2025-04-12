@@ -74,8 +74,6 @@ public class InvoiceController {
     public ResponseEntity<String> createInvoiceFromFile(@RequestParam("file") MultipartFile file){
 
         Map<String,String> metadata = new HashMap<String,String>() ; 
-
-        metadata.put("x-amz-meta-invoiceid","142") ; 
         
         try {
             
