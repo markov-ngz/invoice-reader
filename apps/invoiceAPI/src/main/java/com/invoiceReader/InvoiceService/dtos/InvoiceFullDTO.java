@@ -1,4 +1,4 @@
-package com.invoiceReader.InvoiceService.dtos ; 
+package com.invoiceReader.InvoiceService.dtos;
 
 import java.sql.Date;
 import java.util.List;
@@ -6,7 +6,8 @@ import java.util.List;
 import lombok.Data;
 
 @Data
-public class InvoiceDTO {
+public class InvoiceFullDTO {
+    
     private int id ;
 
     private String invoiceNumber;
@@ -20,4 +21,6 @@ public class InvoiceDTO {
     private String customerAdress;
     
     private double totalAmount;
+
+    private List<InvoiceLineDTO> invoiceLines  ;
 }

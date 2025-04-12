@@ -31,16 +31,6 @@ public class Invoice {
     
     private String customerName;
     private String customerAdress;
-
-
-    @OneToMany(mappedBy = "invoice", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<InvoiceLine> invoiceLines = new HashSet<>(); ;
-    
     
     private double totalAmount;
-
-    public void addInvoiceLine(InvoiceLine line) {
-        line.setInvoice(this);
-        this.invoiceLines.add(line);
-    }
 }

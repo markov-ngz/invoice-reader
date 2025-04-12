@@ -52,6 +52,13 @@ public class InvoiceLineController {
         return ResponseEntity.ok(invoiceLine);
     }
 
+    @GetMapping("/{invoiceId}/lines")
+    public ResponseEntity<List<InvoiceLineDTO>> getInvoiceLineByInvoiceId(@PathVariable int invoiceId) {
+        InvoiceDTO invoiceDTO = invoiceService.findInvoiceById(invoiceId) ; 
+        List<InvoiceLineDTO> invoiceLines = invoiceLineService.findInvoiceLinesByInvoice(invoiceService.convertToEntity(invoiceDTO));
+        return ResponseEntity.ok(invoiceLines);
+    }
+
     @PostMapping("/{invoiceId}/lines")
     public ResponseEntity<List<InvoiceLineDTO>> createInvoiceLines(@PathVariable int invoiceId, @RequestBody List<InvoiceLineCreateDTO> invoiceLineCreateDTO) {
         InvoiceDTO invoiceDTO = invoiceService.findInvoiceById(invoiceId) ; 
