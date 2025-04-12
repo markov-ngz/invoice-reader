@@ -18,8 +18,6 @@ public class InvoiceDTO {
     
     private String customerName;
     private String customerAdress;
-
-    private List<InvoiceLineDTO> invoiceLines;
     
     private double totalAmount;
 }

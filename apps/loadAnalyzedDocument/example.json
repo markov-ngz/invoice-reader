@@ -4,7 +4,6 @@
     "objectKey" : "invoices/EDFFacture2.pdf",
     "invoiceId" : 156444,
     "invoiceDTOs" : [ {
-      "id" : 0,
       "invoiceNumber" : null,
       "invoiceDate" : 1742256000000,
       "supplier" : "EDF",

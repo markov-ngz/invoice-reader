@@ -90,12 +90,6 @@ public class InvoiceService {
         dto.setCustomerName(invoice.getCustomerName());
         dto.setCustomerAdress(invoice.getCustomerAdress());
         dto.setTotalAmount(invoice.getTotalAmount());
-        
-        List<InvoiceLineDTO> invoiceLineDtos = invoiceLineService.findInvoiceLinesByInvoice(invoice) ; 
-
-        dto.setInvoiceLines(invoiceLineDtos);
-        
-        
         return dto;
     }
 
@@ -109,19 +103,6 @@ public class InvoiceService {
         entity.setCustomerName(dto.getCustomerName());
         entity.setCustomerAdress(dto.getCustomerAdress());
         entity.setTotalAmount(dto.getTotalAmount());
-        
-        // Convert invoice lines
-        if (dto.getInvoiceLines() != null) {
-            Set<InvoiceLine> lines = new HashSet<>();
-            for (InvoiceLineDTO lineDTO : dto.getInvoiceLines()) {
-                InvoiceLine line = invoiceLineService.convertToEntity(lineDTO); 
-                line.setInvoice(entity); // Establish bidirectional relationship
-                lines.add(line);
-            }
-            entity.setInvoiceLines(lines);
-        } else {
-            entity.setInvoiceLines(new HashSet<>());
-        }
         
         return entity;
     }
